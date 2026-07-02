@@ -1,12 +1,12 @@
-﻿# 项目自检规则 (Project Self-Check Rules)
-# 在汇报任何成果前，必须运行此脚本验证
+﻿# Codex 项目规则
+# 此文件由项目创建，Codex 行为受此约束
 
-## 规则
-1. JS 语法必须通过 node --check
-2. HTML 开头不能有空格（DOCTYPE 必须是文件第一个字节）
-3. 不能使用 Object.values（部分手机浏览器不支持）
-4. 文件必须能被 HTTP 200 访问
-5. 所有新增功能必须验证存在
+## 自检规则（强制）
+在执行任何汇报、展示、部署之前，必须运行 `python self_check.py` 确认所有检查通过。
+不通过自检不能汇报。
 
-## 自检脚本
-运行: python self_check.py
+## 检查项
+1. DOCTYPE 不能有前导空格
+2. 不能使用 Object.values
+3. JS 语法必须通过 node --check
+4. 所有功能函数必须存在
