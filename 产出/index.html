@@ -1,4 +1,4 @@
-﻿ <!DOCTYPE html>
+ <!DOCTYPE html>
  <html lang="zh-CN">
  <head>
  <meta charset="UTF-8">
@@ -175,6 +175,9 @@
  }
  @media(max-width:480px){.bookmark-btn{right:24px;}}
  .bookmark-btn.active{color:#FFD700;border-color:#FFD700;background:rgba(255,215,0,0.1);}
+.speak-btn{background:rgba(108,92,231,0.15);border:1px solid var(--primary);color:var(--primary-light);padding:8px 16px;border-radius:20px;font-size:13px;cursor:pointer;margin:0 0 16px 0;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;border:none;}
+.speak-btn:active{transform:scale(0.95);}
+.speak-btn.speaking{background:rgba(0,184,148,0.2);border-color:var(--success);color:var(--success);}
 .speak-btn{background:rgba(108,92,231,0.15);border:1px solid var(--primary);color:var(--primary-light);padding:8px 16px;border-radius:20px;font-size:13px;cursor:pointer;margin:0 0 16px 0;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;border:none;}
 .speak-btn:active{transform:scale(0.95);}
 .speak-btn.speaking{background:rgba(0,184,148,0.2);border-color:var(--success);color:var(--success);}
@@ -401,7 +404,8 @@
  let questionOrder = [];
  let currentQuestionIdx = 0;
  
- function getDefaultState() {
+ function showExamSetup(){openModal("modalExamSetup");}
+function getDefaultState() {
      return { banks: {}, bankOrder: [], activeBankId: null, version: 1 };
  }
  
@@ -823,7 +827,7 @@ function selectBank(bankId) {
  
      area.innerHTML = '<div class="question-number">第 '+(currentQuestionIdx+1)+' / '+total+' 题 <span style="color:var(--text-secondary);font-weight:400;">· '+modeText+'</span></div>'+
          '<div class="question-type">'+question.type+'</div>'+
-         '<div class="question-text">'+question.question+'</div>'+'<button class="speak-btn" id="speakBtn" onclick="speakQuestion()">🔊 朗读</button>'+
+         '<div class="question-text">'+question.question+'</div>'+'<button class="speak-btn" id="speakBtn" onclick="speakQuestion()">🔊 朗读</button>'+'<button class="speak-btn" id="speakBtn" onclick="speakQuestion()">🔊 朗读</button>'+
          optHtml+fbHtml+confirmHtml+
          '<div class="nav-buttons">'+
          '<button class="nav-btn" onclick="navQuestion(-1)"'+(currentQuestionIdx<=0?' disabled':'')+'>◀ 上一题</button>'+
@@ -904,20 +908,11 @@ function navQuestion(dir){
     var ni=currentQuestionIdx+dir;
     if(ni<0||ni>=questionOrder.length)return;
     currentQuestionIdx=ni;renderCurrentQuestion();
-}
-
-function speakQuestion(){
-    const bank=getActiveBank();if(!bank||questionOrder.length===0)return;
-    const qId=questionOrder[currentQuestionIdx];
-    const q=bank.questions.find(x=>x.id===qId);if(!q)return;
-    const btn=document.getElementById('speakBtn');
-    if(window.speechSynthesis.speaking){window.speechSynthesis.cancel();if(btn)btn.classList.remove('speaking');return;}
-    const u=new SpeechSynthesisUtterance(q.question);
-    u.lang='zh-CN';u.rate=0.9;
-    u.onend=function(){if(btn)btn.classList.remove('speaking');};
-    u.onstart=function(){if(btn)btn.classList.add('speaking');};
-    window.speechSynthesis.speak(u);
-}
+} {
+     const ni = currentQuestionIdx + dir;
+     if (ni < 0 || ni >= questionOrder.length) return;
+     currentQuestionIdx = ni; renderCurrentQuestion();
+ }
  
  function toggleBookmark() {
      const bank = getActiveBank(); if (!bank || questionOrder.length === 0) return;
@@ -1089,8 +1084,7 @@ function speakQuestion(){
      document.getElementById('settingsTitle').textContent = bank.name+' - 设置';
      document.getElementById('settingsList').innerHTML =
          '<div class="setting-item"><span class="label">重命名</span><input type="text" id="renameInput" value="'+bank.name.replace(/'/g,"\\'")+'" style="padding:6px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px;width:150px;"></div>'+
-         '<div class="setting-item"><span class="label">导出错题</span><button class="action-btn primary" onclick="exportWrongAnswers(''+bankId+')">导出</button></div>
-        <div class="setting-item"><span class="label">导出题库</span><button class="action-btn primary" onclick="exportBank(\''+bankId+'\')">导出 JSON</button></div>'+
+         'mary" onclick="exportBank(\''+bankId+'\')">导出 JSON</button></div>'+
          '<div class="setting-item"><span class="label">重置进度</span><button class="action-btn primary" onclick="resetProgress(\''+bankId+'\')">重置</button></div>'+
          '<div class="danger-zone"><p>删除后将无法恢复</p><button onclick="deleteBank(\''+bankId+'\')">🗑 删除此题库</button></div>';
      openModal('modalBankSettings');
@@ -1161,4 +1155,3 @@ function exportBank(bankId) {
  </script>
  </body>
  </html>
-
