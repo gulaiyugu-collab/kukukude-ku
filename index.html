@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+﻿ <!DOCTYPE html>
  <html lang="zh-CN">
  <head>
  <meta charset="UTF-8">
@@ -904,11 +904,20 @@ function navQuestion(dir){
     var ni=currentQuestionIdx+dir;
     if(ni<0||ni>=questionOrder.length)return;
     currentQuestionIdx=ni;renderCurrentQuestion();
-} {
-     const ni = currentQuestionIdx + dir;
-     if (ni < 0 || ni >= questionOrder.length) return;
-     currentQuestionIdx = ni; renderCurrentQuestion();
- }
+}
+
+function speakQuestion(){
+    const bank=getActiveBank();if(!bank||questionOrder.length===0)return;
+    const qId=questionOrder[currentQuestionIdx];
+    const q=bank.questions.find(x=>x.id===qId);if(!q)return;
+    const btn=document.getElementById('speakBtn');
+    if(window.speechSynthesis.speaking){window.speechSynthesis.cancel();if(btn)btn.classList.remove('speaking');return;}
+    const u=new SpeechSynthesisUtterance(q.question);
+    u.lang='zh-CN';u.rate=0.9;
+    u.onend=function(){if(btn)btn.classList.remove('speaking');};
+    u.onstart=function(){if(btn)btn.classList.add('speaking');};
+    window.speechSynthesis.speak(u);
+}
  
  function toggleBookmark() {
      const bank = getActiveBank(); if (!bank || questionOrder.length === 0) return;
@@ -1152,3 +1161,4 @@ function exportBank(bankId) {
  </script>
  </body>
  </html>
+
