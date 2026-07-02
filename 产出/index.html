@@ -1,0 +1,841 @@
+ <!DOCTYPE html>
+ <html lang="zh-CN">
+ <head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+ <title>酷酷的库</title>
+ <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+ <style>
+ :root{
+     --primary:#6C5CE7;
+     --primary-light:#A29BFE;
+     --primary-dark:#5A4BD1;
+     --success:#00B894;
+     --error:#FF7675;
+     --bg:#0F0F23;
+     --card:#1A1A3E;
+     --card-hover:#252550;
+     --text:#EAEAFF;
+     --text-secondary:#8888AA;
+     --border:#2D2D5E;
+     --radius:12px;
+     --radius-sm:8px;
+     --shadow:0 4px 20px rgba(0,0,0,0.3);
+ }
+ *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);}
+ #app{height:100%;display:flex;flex-direction:column;max-width:480px;margin:0 auto;position:relative;overflow:hidden;}
+ .app-header{
+     background:linear-gradient(135deg,var(--primary),#8B5CF6);
+     padding:16px 20px 14px;
+     flex-shrink:0;
+     display:flex;
+     align-items:center;
+     justify-content:space-between;
+     position:relative;
+     z-index:10;
+ }
+ .app-header h1{
+     font-size:20px;font-weight:700;
+     display:flex;align-items:center;gap:8px;
+ }
+ .app-header h1 span{font-size:22px;}
+ .header-actions{display:flex;gap:8px;}
+ .header-btn{
+     background:rgba(255,255,255,0.2);
+     border:none;color:#fff;
+     width:36px;height:36px;border-radius:50%;
+     display:flex;align-items:center;justify-content:center;
+     font-size:18px;cursor:pointer;
+     transition:background 0.2s;
+ }
+ .header-btn:active{background:rgba(255,255,255,0.35);}
+ .page-container{flex:1;overflow:hidden;position:relative;}
+ .page{display:none;height:100%;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+ .page.active{display:flex;}
+ .bank-list{padding:16px;}
+ .bank-card{
+     background:var(--card);border-radius:var(--radius);
+     padding:16px;margin-bottom:12px;
+     border:1px solid var(--border);
+     cursor:pointer;transition:all 0.2s;
+     position:relative;
+ }
+ .bank-card:active{transform:scale(0.98);background:var(--card-hover);}
+ .bank-card .bank-name{font-size:17px;font-weight:600;display:flex;align-items:center;gap:8px;}
+ .bank-card .bank-name .badge{font-size:11px;background:var(--primary);color:#fff;padding:2px 8px;border-radius:10px;font-weight:500;}
+ .bank-card .bank-stats{display:flex;gap:16px;margin-top:10px;font-size:13px;color:var(--text-secondary);}
+ .bank-card .bank-stats span{display:flex;align-items:center;gap:4px;}
+ .bank-card .bank-actions{position:absolute;top:12px;right:12px;display:flex;gap:4px;}
+ .bank-card .bank-actions button{
+     background:rgba(255,255,255,0.08);
+     border:none;color:var(--text-secondary);
+     width:28px;height:28px;border-radius:6px;
+     font-size:14px;cursor:pointer;
+     display:flex;align-items:center;justify-content:center;
+ }
+ .bank-card .bank-actions button:active{background:rgba(255,255,255,0.15);}
+ .empty-state{text-align:center;padding:60px 20px;color:var(--text-secondary);}
+ .empty-state .icon{font-size:48px;margin-bottom:16px;}
+ .empty-state h3{font-size:18px;color:var(--text);margin-bottom:8px;}
+ .empty-state p{font-size:14px;line-height:1.6;}
+ .fab{
+     position:fixed;bottom:24px;right:calc(50% - 480px/2 + 24px);left:auto;
+     width:56px;height:56px;border-radius:50%;
+     background:linear-gradient(135deg,var(--primary),#8B5CF6);
+     border:none;color:#fff;font-size:28px;
+     box-shadow:0 4px 16px rgba(108,92,231,0.5);
+     cursor:pointer;display:flex;align-items:center;justify-content:center;
+     transition:transform 0.2s;
+     z-index:20;
+ }
+ @media(max-width:480px){.fab{right:24px;}}
+ .fab:active{transform:scale(0.9);}
+ .practice-header{
+     background:var(--card);padding:12px 16px;
+     border-bottom:1px solid var(--border);
+     flex-shrink:0;
+ }
+ .practice-header .top-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;}
+ .practice-header .top-row .back-btn{background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;padding:4px;}
+ .mode-tabs{display:flex;gap:4px;background:rgba(255,255,255,0.06);border-radius:8px;padding:3px;}
+ .mode-tab{
+     flex:1;text-align:center;padding:6px 4px;
+     font-size:11px;border-radius:6px;
+     background:transparent;border:none;
+     color:var(--text-secondary);cursor:pointer;
+     transition:all 0.2s;white-space:nowrap;
+ }
+ .mode-tab.active{background:var(--primary);color:#fff;font-weight:600;}
+ .progress-bar-wrap{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:6px;}
+ .progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--success),var(--primary-light));border-radius:2px;transition:width 0.3s ease;}
+ .stats-row{display:flex;justify-content:space-between;margin-top:6px;font-size:12px;color:var(--text-secondary);}
+ .question-area{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch;}
+ .question-number{font-size:13px;color:var(--primary-light);margin-bottom:8px;font-weight:600;}
+ .question-type{display:inline-block;font-size:11px;background:rgba(108,92,231,0.2);color:var(--primary-light);padding:2px 10px;border-radius:10px;margin-bottom:10px;}
+ .question-text{font-size:18px;line-height:1.6;margin-bottom:20px;font-weight:500;}
+ .options{display:flex;flex-direction:column;gap:10px;}
+ .option-btn{
+     display:flex;align-items:center;gap:12px;
+     padding:14px 16px;
+     background:var(--card);border:2px solid var(--border);
+     border-radius:var(--radius-sm);
+     color:var(--text);font-size:15px;line-height:1.4;
+     cursor:pointer;transition:all 0.2s;
+     text-align:left;width:100%;
+ }
+ .option-btn:active{transform:scale(0.98);}
+ .option-btn .option-label{
+     width:28px;height:28px;border-radius:50%;
+     background:rgba(255,255,255,0.08);
+     display:flex;align-items:center;justify-content:center;
+     font-weight:600;font-size:13px;flex-shrink:0;
+ }
+ .option-btn .option-text{flex:1;}
+ .option-btn.selected{border-color:var(--primary);background:rgba(108,92,231,0.15);}
+ .option-btn.selected .option-label{background:var(--primary);color:#fff;}
+ .option-btn.correct{border-color:var(--success);background:rgba(0,184,148,0.15);}
+ .option-btn.correct .option-label{background:var(--success);color:#fff;}
+ .option-btn.wrong{border-color:var(--error);background:rgba(255,118,117,0.15);}
+ .option-btn.wrong .option-label{background:var(--error);color:#fff;}
+ .option-btn.disabled{cursor:default;opacity:0.8;}
+ .answer-feedback{padding:14px 16px;border-radius:var(--radius-sm);margin:16px 0;font-size:15px;font-weight:600;text-align:center;}
+ .answer-feedback.correct{background:rgba(0,184,148,0.15);color:var(--success);}
+ .answer-feedback.wrong{background:rgba(255,118,117,0.15);color:var(--error);}
+ .answer-feedback .correct-answer{font-weight:400;font-size:13px;margin-top:4px;color:var(--text-secondary);}
+ .confirm-btn{
+     width:100%;padding:14px;
+     background:linear-gradient(135deg,var(--primary),#8B5CF6);
+     border:none;border-radius:var(--radius-sm);
+     color:#fff;font-size:16px;font-weight:600;
+     cursor:pointer;margin-top:12px;
+     display:none;
+ }
+ .confirm-btn.show{display:block;}
+ .nav-buttons{display:flex;gap:10px;margin-top:20px;padding-bottom:20px;}
+ .nav-btn{
+     flex:1;padding:12px;border-radius:var(--radius-sm);
+     border:2px solid var(--border);background:var(--card);
+     color:var(--text);font-size:13px;font-weight:600;
+     cursor:pointer;text-align:center;
+     transition:all 0.2s;
+ }
+ .nav-btn:active{transform:scale(0.97);}
+ .nav-btn.primary{background:var(--primary);border-color:var(--primary);color:#fff;}
+ .nav-btn:disabled{opacity:0.3;cursor:default;}
+ .bookmark-btn{
+     position:fixed;bottom:100px;
+     right:calc(50% - 480px/2 + 24px);left:auto;
+     width:44px;height:44px;border-radius:50%;
+     background:var(--card);border:2px solid var(--border);
+     color:var(--text-secondary);font-size:20px;
+     cursor:pointer;display:flex;align-items:center;justify-content:center;
+     z-index:15;transition:all 0.2s;
+ }
+ @media(max-width:480px){.bookmark-btn{right:24px;}}
+ .bookmark-btn.active{color:#FFD700;border-color:#FFD700;background:rgba(255,215,0,0.1);}
+ .modal-overlay{
+     display:none;position:fixed;top:0;left:0;right:0;bottom:0;
+     background:rgba(0,0,0,0.6);
+     z-index:100;align-items:flex-end;justify-content:center;
+ }
+ .modal-overlay.show{display:flex;}
+ .modal-sheet{
+     max-width:480px;width:100%;
+     max-height:70vh;
+     background:var(--card);border-radius:16px 16px 0 0;
+     padding:20px;overflow-y:auto;
+     animation:slideUp 0.3s ease;
+ }
+ @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+ .modal-sheet .modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px;}
+ .modal-sheet h3{font-size:16px;margin-bottom:12px;color:var(--text);}
+ .question-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:6px;}
+ .q-grid-item{
+     aspect-ratio:1;border-radius:8px;
+     display:flex;align-items:center;justify-content:center;
+     font-size:12px;font-weight:600;
+     cursor:pointer;border:1px solid var(--border);
+     background:var(--bg);color:var(--text-secondary);
+     transition:all 0.15s;position:relative;
+ }
+ .q-grid-item:active{transform:scale(0.9);}
+ .q-grid-item.answered-correct{background:rgba(0,184,148,0.25);border-color:var(--success);color:var(--success);}
+ .q-grid-item.answered-wrong{background:rgba(255,118,117,0.25);border-color:var(--error);color:var(--error);}
+ .q-grid-item.current{border-color:var(--primary);box-shadow:0 0 0 2px rgba(108,92,231,0.3);}
+ .import-area{
+     border:2px dashed var(--border);
+     border-radius:var(--radius);
+     padding:40px 20px;text-align:center;
+     cursor:pointer;transition:all 0.2s;
+     margin-bottom:16px;
+ }
+ .import-area:active{border-color:var(--primary);background:rgba(108,92,231,0.05);}
+ .import-area .icon{font-size:40px;margin-bottom:12px;}
+ .import-area h3{font-size:16px;margin-bottom:6px;}
+ .import-area p{font-size:13px;color:var(--text-secondary);}
+ .import-hidden{display:none;}
+ .preview-table{width:100%;font-size:12px;border-collapse:collapse;margin-top:12px;}
+ .preview-table th,.preview-table td{border:1px solid var(--border);padding:6px 8px;text-align:left;}
+ .preview-table th{background:rgba(108,92,231,0.15);color:var(--primary-light);}
+ .bank-name-input{
+     width:100%;padding:12px 16px;
+     background:var(--bg);border:2px solid var(--border);
+     border-radius:var(--radius-sm);color:var(--text);
+     font-size:16px;margin-top:12px;
+ }
+ .bank-name-input:focus{outline:none;border-color:var(--primary);}
+ .import-btn{
+     width:100%;padding:14px;
+     background:linear-gradient(135deg,var(--primary),#8B5CF6);
+     border:none;border-radius:var(--radius-sm);
+     color:#fff;font-size:16px;font-weight:600;
+     cursor:pointer;margin-top:12px;
+ }
+ .import-btn:disabled{opacity:0.4;cursor:default;}
+ .cancel-btn{
+     width:100%;padding:12px;
+     background:transparent;border:2px solid var(--border);
+     border-radius:var(--radius-sm);
+     color:var(--text-secondary);font-size:14px;
+     cursor:pointer;margin-top:8px;
+ }
+ .bank-settings-list{margin-bottom:16px;}
+ .setting-item{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border);}
+ .setting-item:last-child{border:none;}
+ .setting-item .label{font-size:15px;}
+ .setting-item .action-btn{
+     padding:8px 16px;border-radius:var(--radius-sm);
+     border:none;font-size:13px;font-weight:600;cursor:pointer;
+ }
+ .setting-item .action-btn.danger{background:rgba(255,118,117,0.2);color:var(--error);}
+ .setting-item .action-btn.primary{background:rgba(108,92,231,0.2);color:var(--primary-light);}
+ .danger-zone{margin-top:16px;padding:12px;background:rgba(255,118,117,0.08);border:1px solid rgba(255,118,117,0.2);border-radius:var(--radius-sm);text-align:center;}
+ .danger-zone button{background:var(--error);color:#fff;border:none;padding:10px 24px;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;}
+ .danger-zone p{font-size:12px;color:var(--text-secondary);margin-bottom:8px;}
+ .toast{
+     position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+     background:var(--card);color:var(--text);
+     padding:12px 24px;border-radius:var(--radius-sm);
+     font-size:14px;box-shadow:var(--shadow);
+     z-index:200;opacity:0;
+     transition:opacity 0.3s;
+     max-width:400px;text-align:center;
+     border:1px solid var(--border);
+ }
+ .toast.show{opacity:1;}
+ ::-webkit-scrollbar{width:4px;}
+ ::-webkit-scrollbar-track{background:transparent;}
+ ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+ @media(min-width:481px){#app{border-left:1px solid var(--border);border-right:1px solid var(--border);}}
+ </style>
+ </head>
+ <body>
+ 
+ <div id="app">
+     <div class="app-header">
+         <h1><span>📚</span>酷酷的库</h1>
+         <div class="header-actions">
+             <button class="header-btn" onclick="showImport()" title="导入题库">📥</button>
+         </div>
+     </div>
+ 
+     <div class="page-container" id="pageContainer">
+         <div class="page active" id="pageHome">
+             <div class="bank-list" id="bankList"></div>
+             <button class="fab" onclick="showImport()" id="fabBtn">+</button>
+         </div>
+ 
+         <div class="page" id="pagePractice">
+             <div class="practice-header">
+                 <div class="top-row">
+                     <button class="back-btn" onclick="goHome()">←</button>
+                     <span id="practiceBankName" style="font-weight:600;font-size:15px;"></span>
+                     <div class="mode-tabs" id="modeTabs">
+                         <button class="mode-tab active" data-mode="sequential" onclick="switchMode('sequential')">顺序</button>
+                         <button class="mode-tab" data-mode="random" onclick="switchMode('random')">随机</button>
+                         <button class="mode-tab" data-mode="wrong" onclick="switchMode('wrong')">错题</button>
+                         <button class="mode-tab" data-mode="bookmark" onclick="switchMode('bookmark')">收藏</button>
+                     </div>
+                 </div>
+                 <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
+                 <div class="stats-row">
+                     <span id="progressText">0/0</span>
+                     <span id="accuracyText">正确率: 0%</span>
+                 </div>
+             </div>
+             <div class="question-area" id="questionArea"></div>
+             <button class="bookmark-btn" id="bookmarkBtn" onclick="toggleBookmark()">☆</button>
+         </div>
+     </div>
+ </div>
+ 
+ <div class="modal-overlay" id="modalNavigator" onclick="if(event.target===this)closeModal('modalNavigator')">
+     <div class="modal-sheet">
+         <div class="modal-handle"></div>
+         <h3>题目导航</h3>
+         <div class="question-grid" id="questionGrid"></div>
+     </div>
+ </div>
+ 
+ <div class="modal-overlay" id="modalImport" onclick="if(event.target===this)closeModal('modalImport')">
+     <div class="modal-sheet">
+         <div class="modal-handle"></div>
+         <h3 id="importTitle">导入题库</h3>
+         <div class="import-area" id="importArea" onclick="document.getElementById('fileInput').click()">
+             <div class="icon">📂</div>
+             <h3>选择 Excel 或 JSON 文件</h3>
+             <p>支持 .xlsx / .xls / .json 格式</p>
+         </div>
+         <input type="file" id="fileInput" accept=".xlsx,.xls,.json" class="import-hidden" onchange="handleFileSelect(event)">
+         <div id="importPreview"></div>
+         <input type="text" class="bank-name-input" id="bankNameInput" placeholder="题库名称">
+         <button class="import-btn" id="confirmImportBtn" disabled onclick="confirmImport()">确认导入</button>
+         <button class="cancel-btn" onclick="closeModal('modalImport')">取消</button>
+     </div>
+ </div>
+ 
+ <div class="modal-overlay" id="modalBankSettings" onclick="if(event.target===this)closeModal('modalBankSettings')">
+     <div class="modal-sheet">
+         <div class="modal-handle"></div>
+         <h3 id="settingsTitle">题库设置</h3>
+         <div class="bank-settings-list" id="settingsList"></div>
+         <button class="cancel-btn" onclick="closeModal('modalBankSettings')">关闭</button>
+     </div>
+ </div>
+ 
+ <div class="toast" id="toast"></div>
+ 
+ <script>
+ const DEFAULT_QUESTIONS = [{"id": 1, "question": "氧气面罩可以做防烟面罩使用", "type": "判断题", "answer": "错", "options": {}}, {"id": 2, "question": "当自动和电动都无法打开氧气面罩储藏室的门时，可用人工方式使用尖细的物品打开氧气面罩储藏室门，使氧气面罩脱落。", "type": "判断题", "answer": "对", "options": {}}, {"id": 3, "question": "飞机设有两套完全独立的氧气系统，一套由固定的氧气瓶提供混合氧气/纯氧给驾驶舱机组使用，每个驾驶舱机组成员都有单独的面罩和调节器。另一套位于每个旅客服务组件（PSU）内，由独立的化学氧气发生器提供化学氧气给乘务员和旅客使用。", "type": "判断题", "answer": "对", "options": {}}, {"id": 4, "question": "若找不到专业的医务人员或无法立即着陆，机长可与飞行控制台联系，该台可 24 小时与国际航空救护医疗服务部门联系", "type": "判断题", "answer": "对", "options": {}}, {"id": 5, "question": "重大食物和职业中毒的机上处置需要对引发中毒的排泄物、呕吐物等应采样和留样，以便调查", "type": "判断题", "answer": "对", "options": {}}, {"id": 6, "question": "东海工作人员可以正式宣布旅客的健康状况", "type": "判断题", "answer": "错", "options": {}}, {"id": 7, "question": "日/夜烟火信号筒用完之后，把用过的一端浸入水中。冷却后，可以把烟火信号筒中未使用的部分放回 SK 包，以备将来使用", "type": "判断题", "answer": "对", "options": {}}, {"id": 8, "question": "检查洗手间内自动灭火装置的喷嘴，白色为正常，黑色或墨绿色为已使用或失效", "type": "判断题", "answer": "错", "options": {}}, {"id": 9, "question": "可以将氧气瓶中氧气放空", "type": "判断题", "answer": "错", "options": {}}, {"id": 10, "question": "空中信号筒可以使用2次", "type": "判断题", "answer": "错", "options": {}}, {"id": 11, "question": "救生筏无论哪面朝上，都可以使用", "type": "判断题", "answer": "对", "options": {}}, {"id": 12, "question": "水灭火瓶适用于扑灭各类火灾，除电器类以外。", "type": "判断题", "answer": "错", "options": {}}, {"id": 13, "question": "救生衣上的定位灯使用时间为4.2小时", "type": "判断题", "answer": "错", "options": {}}, {"id": 14, "question": "水灭火瓶的水可直接饮用", "type": "判断题", "answer": "错", "options": {}}, {"id": 15, "question": "应急手电筒确认检查灯3-5秒闪一次。如果超过10秒闪一次为电池电量不足，需通知维修人员更换电池", "type": "判断题", "answer": "错", "options": {}}, {"id": 16, "question": "海水染色剂可持续时间为45分钟", "type": "判断题", "answer": "对", "options": {}}, {"id": 17, "question": "应急斧可以耐2400伏的电压", "type": "判断题", "answer": "对", "options": {}}, {"id": 18, "question": "洗手间的自动灭火装置当温度达到77摄氏度时，灭火装置开始工作。", "type": "判断题", "answer": "对", "options": {}}, {"id": 19, "question": "737-800飞机客舱一共有8个出口", "type": "判断题", "answer": "对", "options": {}}, {"id": 20, "question": "救生衣定位灯为8—10小时", "type": "判断题", "answer": "对", "options": {}}, {"id": 21, "question": "手电筒闪烁超过15秒为电量不足", "type": "判断题", "answer": "错", "options": {}}, {"id": 22, "question": "救生斧是用于劈开靠近着火点的障碍物，以及在需要时劈开机身作为撤离出口时使用，可耐2400伏的电压", "type": "判断题", "answer": "对", "options": {}}, {"id": 23, "question": "跨水飞行的定义是指50海里（93公里）", "type": "判断题", "answer": "对", "options": {}}, {"id": 24, "question": "如果旅客备份救生衣不足时，可以使用机组安全演示救生衣", "type": "判断题", "answer": "错", "options": {}}, {"id": 25, "question": "B737-800翼上出口逃生绳一共2条", "type": "判断题", "answer": "对", "options": {}}, {"id": 26, "question": "我司所有机型只配备一种PBE", "type": "判断题", "answer": "错", "options": {}}, {"id": 27, "question": "海伦灭火瓶使用距离为2-3米", "type": "判断题", "answer": "错", "options": {}}, {"id": 28, "question": "SK包中的海水染色剂含有的化学试剂可以将救生船周围300 米的水染成绿色荧光。", "type": "判断题", "answer": "对", "options": {}}, {"id": 29, "question": "SK包中的日夜烟火信号筒白天发射的一端盖面上摸起来是平滑的。夜晚发射的一端是通过保护盖上的几个突出圆点区分的", "type": "判断题", "answer": "对", "options": {}}, {"id": 30, "question": "飞机上配备的麦克风应保证每99 名旅客有一个麦克风，超过99名应配备两个。", "type": "判断题", "answer": "对", "options": {}}, {"id": 31, "question": "机上应急灯使用人工方式时：驾驶舱内应急灯开关放在“ON”位时，应急灯会接通亮起", "type": "判断题", "answer": "对", "options": {}}, {"id": 32, "question": "机上应急灯使用人工方式时：当驾驶舱内紧急灯开关放在“Armed”位置时，所有的应急灯会在正常电源失效后自动接通", "type": "判断题", "answer": "错", "options": {}}, {"id": 33, "question": "飞机上配备的手电筒上的LED 指示灯不闪烁或者闪烁的间隔大于等于10 秒钟，说明电池电力不足，需通知维修人员更换", "type": "判断题", "answer": "对", "options": {}}, {"id": 34, "question": "石棉手套具有防火隔热作用。用于驾驶舱失火时，保证驾驶员能够操作飞机", "type": "判断题", "answer": "对", "options": {}}, {"id": 35, "question": "洗手间的的垃圾箱自动灭火装置使用时间为20秒", "type": "判断题", "answer": "错", "options": {}}, {"id": 36, "question": "当洗手间的的垃圾箱温度到大约77 摄氏度，灭火器两个喷嘴的热熔剂融化，灭火器喷出海伦气体", "type": "判断题", "answer": "对", "options": {}}, {"id": 37, "question": "厕所灭火系统包括：烟雾报警系统和自动灭火系统，垃圾箱盖板", "type": "判断题", "answer": "对", "options": {}}, {"id": 38, "question": "海伦灭火瓶可以用于人面部的火灾和其它类的火灾", "type": "判断题", "answer": "错", "options": {}}, {"id": 39, "question": "海伦灭火瓶的喷射时间为10—15秒", "type": "判断题", "answer": "错", "options": {}}, {"id": 40, "question": "海伦灭火瓶(Halon Fire Extinguisher)适合任何类型的火灾", "type": "判断题", "answer": "对", "options": {}}, {"id": 41, "question": "化学氧气发生器，只有拉动面罩后才有氧气流出，拉动储藏箱内的任何一个面罩可使该氧气面罩储藏室内所有的面罩都能有氧气流出，氧气系统一旦开启后就不能关断。", "type": "判断题", "answer": "对", "options": {}}, {"id": 42, "question": "每个洗手间内都装有两个氧气面罩", "type": "判断题", "answer": "对", "options": {}}, {"id": 43, "question": "应急灯系统通常可以由驾驶舱的电门控制，该系统在飞行前置于ARMED位", "type": "判断题", "answer": "对", "options": {}}, {"id": 44, "question": "应急灯系统提供了出口位置指示以及飞机内/外的出口通道灯光。", "type": "判断题", "answer": "对", "options": {}}, {"id": 45, "question": "应急灯开关位于后乘务员控制面板", "type": "判断题", "answer": "对", "options": {}}, {"id": 46, "question": "乘务长无权决定是否使用卫生防疫包，是否使用卫生防疫包有机长机长决定，使用后乘务长负责填写CLB本", "type": "判断题", "answer": "错", "options": {}}, {"id": 47, "question": "机上急救设备分为急救箱、应急医疗药箱。", "type": "判断题", "answer": "错", "options": {}}, {"id": 48, "question": "起飞前必须完成对灭火器（化学、水）、防烟眼镜、防护式呼吸装置（防烟面罩 PBE)、应急斧（救生斧）、石棉手套等灭火设备的检查，确保这些设备存放位置正确，符合使用要求。", "type": "判断题", "answer": "对", "options": {}}, {"id": 49, "question": "陆地迫降的位置可能在野外也可能在机场内，当迫降在野外时，乘务员应尽可能多地携带饮料、食品和毛毯，带下旅客的高跟鞋。", "type": "判断题", "answer": "对", "options": {}}, {"id": 50, "question": "提供急救后应尽快洗手", "type": "判断题", "answer": "对", "options": {}}, {"id": 51, "question": "在急救过程中，要遵循“急救人员绝对不应使自己处于不利地位的原则”。", "type": "判断题", "answer": "对", "options": {}}, {"id": 52, "question": "生命体征包括：脉搏、呼吸、血压、体温", "type": "判断题", "answer": "对", "options": {}}, {"id": 53, "question": "机上发现爆炸物的总原则是：不要乱动，立即报告机长，以便采取相应的有效措施。一般在机上发现爆炸物后，应在机上处理", "type": "判断题", "answer": "错", "options": {}}, {"id": 54, "question": "机上发现爆炸物的总原则是：不要乱动，立即报告机长，以便采取相应的有效措施。", "type": "判断题", "answer": "对", "options": {}}, {"id": 55, "question": "水上求生时，除非特别渴，否则在救生船上的第一个24小时不要喝水。", "type": "判断题", "answer": "对", "options": {}}, {"id": 56, "question": "当飞机发生异常情况，乘务员汇报驾驶舱可使用内话紧急呼叫驾驶舱，甚至直接进入。", "type": "判断题", "answer": "对", "options": {}}, {"id": 57, "question": "TUC是指不带氧气面罩的有用知觉时间", "type": "判断题", "answer": "对", "options": {}}, {"id": 58, "question": "水上撤离应选择在下风侧,离开燃油漂浮区和飞机下沉漩涡区", "type": "判断题", "answer": "对", "options": {}}, {"id": 59, "question": "水上求生单人保暖休息法：双腿向腹部弯曲，两手交叉抱住双膝于胸前。", "type": "判断题", "answer": "对", "options": {}}, {"id": 60, "question": "骨折时采取固定可以防止骨折断端活动以避免刺伤周围组织", "type": "判断题", "answer": "对", "options": {}}, {"id": 61, "question": "尽量避免搬动有颈背部损伤的病人，不要使病人抬头或扭转头部", "type": "判断题", "answer": "对", "options": {}}, {"id": 62, "question": "外伤包扎可以起到止血和保护伤口及固定敷料的作用", "type": "判断题", "answer": "对", "options": {}}, {"id": 63, "question": "可作为引火物的有棉绒、纸绒、脱脂棉、蘸过汽油的抹布、干枯的草", "type": "判断题", "answer": "对", "options": {}}, {"id": 64, "question": "野外求生时生火的一般顺序是从引火物到火花，再到燃料", "type": "判断题", "answer": "错", "options": {}}, {"id": 65, "question": "ELT是仅次于烟雾和反光镜的最佳联络手段", "type": "判断题", "answer": "错", "options": {}}, {"id": 66, "question": "航空器使用下列信号表示已明白地面信号：夜间，开关着陆灯两次（如无此设备则开关航行灯两次）", "type": "判断题", "answer": "对", "options": {}}, {"id": 67, "question": "较大动脉损伤时，唯一有效的止血方法是扎止血带", "type": "判断题", "answer": "对", "options": {}}, {"id": 68, "question": "骨折时，压板长度应长于受伤部位上下两个关节的长度。", "type": "判断题", "answer": "对", "options": {}}, {"id": 69, "question": "胸外按压与吹气之比为15:2", "type": "判断题", "answer": "错", "options": {}}, {"id": 70, "question": "心外按压时按压频率为110-120次/分", "type": "判断题", "answer": "错", "options": {}}, {"id": 71, "question": "怀疑脊柱骨折时，应用硬板担架搬运。", "type": "判断题", "answer": "对", "options": {}}, {"id": 72, "question": "提供急救时，要注意保护自己，减少被感染的危险", "type": "判断题", "answer": "对", "options": {}}, {"id": 73, "question": "航空器使用下列信号表示已明白地面信号：昼间，摇摆机翼", "type": "判断题", "answer": "对", "options": {}}, {"id": 74, "question": "国际公认的求援符号中“SOS”表示请求援助我们", "type": "判断题", "answer": "对", "options": {}}, {"id": 75, "question": "国际公认的求援符号中“Y”或“N”分别代表“是”或“不是", "type": "判断题", "answer": "对", "options": {}}, {"id": 76, "question": "处理客舱释压时应遵循的原则是先他人后自己", "type": "判断题", "answer": "错", "options": {}}, {"id": 77, "question": "当座舱高度达到22000英尺，人体的反应为惊厥,昏迷,虚脱，休克,生存5-10分钟", "type": "判断题", "answer": "对", "options": {}}, {"id": 78, "question": "缓慢释压指的是迅速失去客舱压力。快速释压产生的原因是由于增压系统失效（可能使密封破裂的金属疲劳造成）、机体受到严重损坏（炸弹爆炸、武器射击等），例如一个门或是出口盖脱落，或是机体蒙皮脱落形成大洞。在极端情况下，可以把快速释压归类为爆炸性释压。", "type": "判断题", "answer": "错", "options": {}}, {"id": 79, "question": "缓慢释压指的是逐渐失去客舱压力，它可能是因机门或应急窗的密封泄露或因增压系统发生故障而引起的", "type": "判断题", "answer": "对", "options": {}}, {"id": 80, "question": "释压可分为缓慢释压和急速释压两类", "type": "判断题", "answer": "对", "options": {}}, {"id": 81, "question": "C 类火灾包括：电器设备失火", "type": "判断题", "answer": "对", "options": {}}, {"id": 82, "question": "压耳主要表现是恶心、呕吐", "type": "判断题", "answer": "错", "options": {}}, {"id": 83, "question": "打开呼吸道的方法是：使病人头后仰、下颌抬起、下颌角与耳垂连线与地面垂直。", "type": "判断题", "answer": "对", "options": {}}, {"id": 84, "question": "做口对口人工呼吸时，吸气后，张口必须包牢病人口部向内吹气", "type": "判断题", "answer": "对", "options": {}}, {"id": 85, "question": "二度烫伤如水泡未破可泼上冷水直至疼痛消失", "type": "判断题", "answer": "对", "options": {}}, {"id": 86, "question": "A 类火灾包括：易燃的液体，如汽油、滑油、油脂、溶剂、油漆", "type": "判断题", "answer": "错", "options": {}}, {"id": 87, "question": "B类火灾包括：可燃烧的物质。如织物、纸、木、塑料、橡胶等", "type": "判断题", "answer": "错", "options": {}}, {"id": 88, "question": "百分之八十的空难事故发生在“危险十一分钟”即起飞前3分钟和落地前8分钟。", "type": "判断题", "answer": "错", "options": {}}, {"id": 89, "question": "下列释压征兆对应不正确的是", "type": "多选题", "answer": "AB", "options": {"A": "可能产生灰尘——缓慢释压", "B": "失密处有漏气的呼啸声 ——爆炸释压", "C": "耳部不适——缓慢释压", "D": "温度下降——爆炸释压"}}, {"id": 90, "question": "客舱准备时，机长和乘务长双方之间必须协调以下内容：", "type": "多选题", "answer": "ABCD", "options": {"A": "防冲击/撤离命令由谁、以何种方式发出", "B": "准备时间的长短", "C": "特殊指示( 如飞机的状态或天气情况)", "D": "紧急情况的性质"}}, {"id": 91, "question": "包扎的目的包括哪些？", "type": "多选题", "answer": "ABCD", "options": {"A": "保护伤口", "B": "减少感染", "C": "压迫止血", "D": "固定敷料"}}, {"id": 92, "question": "休克病人的症状有哪些", "type": "多选题", "answer": "ABCD", "options": {"A": "过度换气", "B": "嗜睡甚至昏迷", "C": "脉搏细、弱", "D": "面色苍白，出冷汗"}}, {"id": 93, "question": "内出血包含一下哪些类型？", "type": "多选题", "answer": "ABCD", "options": {"A": "脑出血", "B": "胃出血", "C": "肝脾破裂出血", "D": "宫外孕破裂出血"}}, {"id": 94, "question": "劫机处置的基本原则", "type": "多选题", "answer": "ABC", "options": {"A": "安全第一、统一指挥", "B": "适时果断处置", "C": "力争境内、力争地面处置", "D": "乘务长有最后处置权"}}, {"id": 95, "question": "下列诉述中属于一般灭火程序的是：", "type": "多选题", "answer": "ABC", "options": {"A": "切断电源", "B": "取用相应的灭火瓶灭火，根据需要在非烟区戴好防烟面罩", "C": "监视情况，保证余火灭尽", "D": "关闭通风口，控制火情"}}, {"id": 96, "question": "以下哪些情况需要及时报告机长", "type": "多选题", "answer": "ABCD", "options": {"A": "飞行中遭遇机外起火", "B": "不正常的飞机姿态（机体破损）", "C": "发动机周围漏油", "D": "客舱充满烟雾"}}, {"id": 97, "question": "下列关于心绞痛说法正确的有（    ）", "type": "多选题", "answer": "ABD", "options": {"A": "心绞痛表现为压迫或紧缩感觉的持续性闷痛，常有窒息感", "B": "患心绞痛的乘客会出现精神异常，焦虑不安，烦躁易怒。", "C": "让其坐位休息", "D": "尽快吸氧并注意保暖"}}, {"id": 98, "question": "海上求生时，淡水的来源有", "type": "多选题", "answer": "ABD", "options": {"A": "离机前，尽量收集机上饮料带到救生筏上", "B": "收集金属表面的露水", "C": "利用海水淡化剂淡化海水使其成为可饮用淡水", "D": "收集雨水，利用救生筏储存雨水"}}, {"id": 99, "question": "在野外求生的环境下，可当做引火物的是：", "type": "多选题", "answer": "ABCD", "options": {"A": "纸绒", "B": "脱脂棉", "C": "蘸过汽油的抹布", "D": "棉绒"}}, {"id": 100, "question": "以下哪些是在求生时使用的方向指示标：", "type": "多选题", "answer": "ABCD", "options": {"A": "将棍棒支撑在树叉间，顶部指着行动的方向", "B": "将岩石或碎石片摆成箭头形", "C": "在地上放置一根分叉的树枝，用分叉点指向行动方向", "D": "两根交叉的木棒或石头意味着此路不通"}}, {"id": 101, "question": "航空器使用下列信号表示已明白地面信号", "type": "多选题", "answer": "BD", "options": {"A": "在空中持续盘旋", "B": "昼间：摇摆机翼", "C": "下降高度", "D": "夜间：开关着陆灯两次（如无此设备则开关航行灯两次）"}}, {"id": 102, "question": "利用（   ）等天然材料堆成各种求救信号可以吸引来自空中救援人员的注意", "type": "多选题", "answer": "ABCD", "options": {"A": "树丛", "B": "树叶", "C": "石头", "D": "雪"}}, {"id": 103, "question": "下列哪些可用作求救信号的资源", "type": "多选题", "answer": "ABCD", "options": {"A": "应急发报机", "B": "手电筒", "C": "哨子", "D": "手机"}}, {"id": 104, "question": "在求生过程中，应牢记以下指导方针：", "type": "多选题", "answer": "ABCD", "options": {"A": "撤离到安全地带", "B": "携带有用物品", "C": "救护伤员", "D": "采取保护措施——建立避难所"}}, {"id": 105, "question": "快速释压客舱内的反应是", "type": "多选题", "answer": "ABCD", "options": {"A": "飞机结构突然损坏，并出现强烈震动", "B": "有物体在舱内飘飞，可能出现灰尘", "C": "冷空气涌入客舱，客舱温度下降", "D": "有很响的气流声及薄雾出现"}}, {"id": 106, "question": "缓慢释压客舱内的反应是", "type": "多选题", "answer": "ABCD", "options": {"A": "氧气面罩脱落", "B": "轻细物体被吸向破损处", "C": "系好安全带/禁止吸烟指示灯亮", "D": "失密破损处有外部光线射入"}}, {"id": 107, "question": "释压可分为几类", "type": "多选题", "answer": "AD", "options": {"A": "缓慢释压", "B": "普通释压", "C": "正常释压", "D": "急速释压"}}, {"id": 108, "question": "灰尘等漂浮物入眼，乘客眼睛充血、灼痛、流泪时，应(     )", "type": "多选题", "answer": "ABC", "options": {"A": "翻起上眼睑，让病人向下看", "B": "用凉开水冲洗眼睛", "C": "用湿的纸巾角，轻轻粘出异物", "D": "在漂浮物出不来的时候让乘客睁开眼睛"}}, {"id": 109, "question": "应对三度烧伤/烫伤的正确方式有", "type": "多选题", "answer": "BCD", "options": {"A": "脱下或移动烧伤处的衣物", "B": "用干燥的消毒绷带轻轻包扎", "C": "将烧伤肢体轻轻抬起。", "D": "为休克病人提供急救"}}, {"id": 110, "question": "机上灭火时需要向机长汇报的内容包括（但不限于）：", "type": "多选题", "answer": "ABCD", "options": {"A": "颜色", "B": "火源", "C": "火势", "D": "客舱乘务员采取的行"}}, {"id": 111, "question": "以下哪些物质发生火灾为C类火灾", "type": "多选题", "answer": "AB", "options": {"A": "烧水杯", "B": "烤箱", "C": "橡胶", "D": "钠"}}, {"id": 112, "question": "以下哪些物质发生火灾为B类火灾", "type": "多选题", "answer": "BCD", "options": {"A": "木", "B": "汽油", "C": "滑油", "D": "油漆"}}, {"id": 113, "question": "以下哪些物质发生火灾为A类火灾", "type": "多选题", "answer": "AB", "options": {"A": "织物", "B": "塑料", "C": "油脂", "D": "镁"}}, {"id": 114, "question": "火灾的隐患包括", "type": "多选题", "answer": "ABCD", "options": {"A": "吸烟", "B": "烤炉内存有异物或加热时间过长", "C": "旅客吸氧时", "D": "旅客携带有易燃物品"}}, {"id": 115, "question": "下列关于空中信号筒说法正确的有（   ）", "type": "多选题", "answer": "CD", "options": {"A": "它是双向发射的呼叫信号发射器", "B": "可以两次使用", "C": "白天黑夜都可以使用", "D": "只有在确实看见或听见有飞机或船只经过或正接近时，才释放信号筒。"}}, {"id": 116, "question": "使用水灭火器的注意事项有（    ）", "type": "多选题", "answer": "AB", "options": {"A": "不能用于电气和油类火灾。", "B": "瓶中的水加有防凝剂，不能饮用", "C": "使用时瓶体要保持水平状态", "D": "距离火源5米"}}, {"id": 117, "question": "对化学应急氧气系统，以下错误的是", "type": "多选题", "answer": "BCD", "options": {"A": "氧气发生组件工作时，客舱内会出现烟雾", "B": "乘务员面罩位于旅客座椅上方", "C": "乘务员氧气面罩可提供30分钟氧气", "D": "当两人同时使用一个氧气发生组件时，供氧时间会减半"}}, {"id": 118, "question": "下列关于鼻出血说法正确的有", "type": "多选题", "answer": "BD", "options": {"A": "热敷鼻部的周围，前额及后颈部", "B": "捏住鼻子，以控制出血，儿童鼻出血多在鼻腔前部，40 岁以后多在鼻腔后部，施加压力不少于 10 分钟。", "C": "提醒病人要擤鼻，吐出口中积血", "D": "让病人休息好，一般坐位，有休克时头低脚高位。"}}, {"id": 119, "question": "止血的常用方法有", "type": "多选题", "answer": "ACD", "options": {"A": "加压包扎止血法", "B": "三角巾止血法", "C": "指压止血法", "D": "止血带止血法"}}, {"id": 120, "question": "癫痫的症状", "type": "多选题", "answer": "ABCD", "options": {"A": "突然出现似羊叫的尖叫声", "B": "面色表紫，瞳孔散大，口吐白沫或流口水", "C": "发作期间，病人可能会停止呼吸。", "D": "大小便失禁"}}, {"id": 121, "question": "心绞痛病人发作时的急救", "type": "多选题", "answer": "ABCD", "options": {"A": "用病人随身携带的药物帮助病人", "B": "放松紧身的衣物，让其卧位休息", "C": "吸氧", "D": "询问病史"}}, {"id": 122, "question": "以下哪些是一度烫伤的表征", "type": "多选题", "answer": "AC", "options": {"A": "皮肤红肿", "B": "可能出现休克", "C": "疼痛", "D": "局部呈红斑"}}, {"id": 123, "question": "救生筏内的顶篷的作用有", "type": "多选题", "answer": "ACD", "options": {"A": "保护幸存者免受日晒和在炎热天气下避免脱水", "B": "使救生船保持干爽", "C": "其明亮、具有反射性的颜色可作信号装置", "D": "在下雨时获得水源"}}, {"id": 124, "question": "使用PBE可以", "type": "多选题", "answer": "ABD", "options": {"A": "当客舱失火时可以防止烟雾和有毒气体的吸入", "B": "当客舱充满烟雾时可以提高对客舱的能见度", "C": "为使用者提供大约12分钟的用氧", "D": "为使用者提供大约15分钟的用氧"}}, {"id": 125, "question": "卫生防疫包用于清洁客舱内（     ）等潜在传染物质护理可疑传染病人。", "type": "多选题", "answer": "BCD", "options": {"A": "饮料", "B": "呕吐物", "C": "血液", "D": "尿液"}}, {"id": 126, "question": "我司机上配备的SK包内的物品有", "type": "多选题", "answer": "ABCDE", "options": {"A": "手动气泵 生存手册", "B": "补漏夹 淡水", "C": "净水药片  急救药品", "D": "多用途小刀 日夜烟火信号筒", "E": "海水染色剂  舀水筒（戽斗）、吸水海绵（海绵）"}}, {"id": 127, "question": "机上应急灯的使用方法包括", "type": "多选题", "answer": "BC", "options": {"A": "电动方式", "B": "自动方式", "C": "人工方式", "D": "感应方式"}}, {"id": 128, "question": "在使用机上PBE应注意以下哪些问题", "type": "多选题", "answer": "ABCDE", "options": {"A": "远离火源处脱下面罩", "B": "头发必须全部放进去，衣领要离开密封胶圈", "C": "如果戴着眼镜使用，戴好后要在面罩外面整理眼镜位置", "D": "取下面罩后，因头发内残留有氧气，不要靠近有明火或火焰的地方，要充分抖散头发。", "E": "当头晕，或面罩内吸，说明供氧结束，应立刻离开火源，到达安全区取下面罩."}}, {"id": 129, "question": "飞机的手提式氧气瓶，使用注意事项", "type": "多选题", "answer": "ABC", "options": {"A": "不要摔或撞氧气瓶", "B": "至少保留500PSI", "C": "用氧周围4排3米之内不能有火源", "D": "肺气肿患者使用高流量"}}, {"id": 130, "question": "氧气面罩储藏室的门可以通过几种方式打开", "type": "多选题", "answer": "ABD", "options": {"A": "自动方式", "B": "电动方式", "C": "感应方式", "D": "人工方式"}}, {"id": 131, "question": "旅客救生衣是（  ）的", "type": "单选题", "answer": "A", "options": {"A": "黄色", "B": "红色", "C": "橘色", "D": "橘色黄色相间"}}, {"id": 132, "question": "每只救生筏的载客量为（   ）人", "type": "单选题", "answer": "B", "options": {"A": "29-46", "B": "46-69", "C": "59-76", "D": "66-89"}}, {"id": 133, "question": "下列关于化学氧气发生器说法正确的一项是（   ）", "type": "单选题", "answer": "A", "options": {"A": "当氧气面罩脱落后，用力拉下面罩", "B": "供氧结束，氧气发生器使用后应将面罩放回", "C": "氧气面罩能做防烟面罩使用", "D": "把带子套在头上，保持闭气"}}, {"id": 134, "question": "内置式固定灭火器的工作时间为（   ）", "type": "单选题", "answer": "B", "options": {"A": "5-15秒", "B": "3-15秒", "C": "10-20秒", "D": "10-25秒"}}, {"id": 135, "question": "水灭火器可连续喷射（   ）", "type": "单选题", "answer": "B", "options": {"A": "20秒钟", "B": "40秒钟", "C": "60秒钟", "D": "30秒钟"}}, {"id": 136, "question": "应急医疗箱每个航班中配备（   ）个", "type": "单选题", "answer": "A", "options": {"A": "1", "B": "2", "C": "3", "D": "4"}}, {"id": 137, "question": "如需要，（    ）可以决定打开急救药箱取用所需用品", "type": "单选题", "answer": "C", "options": {"A": "乘务员", "B": "乘务长", "C": "机长", "D": "安全员"}}, {"id": 138, "question": "在运行中使用急救箱或任何药品时，应当首先保证被帮助者或者其同行人知晓使用说明，同意并签署（     ）后方可使用", "type": "单选题", "answer": "B", "options": {"A": "应急救助使用知情同意书", "B": "应急医疗设备和药品使用知情同意书", "C": "应急医疗设备和药品使用知情告知书", "D": "应急救治使用情况说明"}}, {"id": 139, "question": "急救箱的内容不含有(   )", "type": "单选题", "answer": "D", "options": {"A": "敷料", "B": "三角巾", "C": "外用烧伤膏", "D": "医用口罩"}}, {"id": 140, "question": "检查威胁生命的原因及伤病旅客反应情况时的检查应按照什么顺序。", "type": "单选题", "answer": "B", "options": {"A": "呼吸-通气-循环-除颤", "B": "通气-呼吸-循环-除颤", "C": "呼吸-循环-通气-除颤", "D": "通气-循环-呼吸-除颤"}}, {"id": 141, "question": "实施心肺复苏术期间，无论是单人操作还是双人操作，中断心脏挤压的时间应控制于（）长时间之内。", "type": "单选题", "answer": "B", "options": {"A": "5秒", "B": "10秒", "C": "1分钟", "D": "20秒"}}, {"id": 142, "question": "使用止血带止血时，结扎的总时间尽量不要超过（）小时。", "type": "单选题", "answer": "A", "options": {"A": "5小时", "B": "3小时", "C": "2小时", "D": "4小时"}}, {"id": 143, "question": "心源性心搏骤停实施心肺复苏的正确操作标准流程正确的是A开通气道-B人工呼吸—C心脏按压-D除颤？", "type": "单选题", "answer": "D", "options": {"A": "A-B-C-D", "B": "A-C-B-D", "C": "C-B-A-D", "D": "C-A-B-D"}}, {"id": 144, "question": "当出现异物梗塞时对有意识的成人和儿童立位腹部挤压法时说法错误的是？", "type": "单选题", "answer": "C", "options": {"A": "施救者站在病人后面、双臂环绕住病人的腰部", "B": "嘱咐病人弯腰、头部前倾", "C": "施救者一手捏成空心拳，将大拇指侧面顶住腹部正中线、肚脐上方三横指、剑突上方处", "D": "另一手握紧此拳，快速向内、向上冲击5次"}}, {"id": 145, "question": "进行伤势评估时，可以查看医疗警戒标志一般位于（）位置。", "type": "单选题", "answer": "A", "options": {"A": "颈部或手腕", "B": "手腕或脚踝", "C": "颈部或脚踝", "D": "脚踝或胸部"}}, {"id": 146, "question": "在实施心肺复苏术期间，无论是单人操作还是双人操作，中断心脏挤压的时间应控制于（   ）之内。", "type": "单选题", "answer": "C", "options": {"A": "15秒", "B": "30秒", "C": "10秒", "D": "60秒"}}, {"id": 147, "question": "东海航空每架飞机配置急救箱 (   )个。", "type": "单选题", "answer": "B", "options": {"A": "2个", "B": "3个", "C": "4个", "D": "5个"}}, {"id": 148, "question": "若前轮和主轮全部折断的情况下", "type": "单选题", "answer": "A", "options": {"A": "所有出口可以使用", "B": "所有的机门和出口不可以使用", "C": "前机门不可使用，后机门可正常使用", "D": "后机门不可使用，前机门可正常使用"}}, {"id": 149, "question": "SK包中的海水染色剂持续时间约为______分钟", "type": "单选题", "answer": "B", "options": {"A": "30", "B": "45", "C": "60", "D": "85"}}, {"id": 150, "question": "成人胸外心脏按压频率：至少每分钟（   ）的平稳速率，每次按压结束，确保胸壁完全回弹尽量减少中断。", "type": "单选题", "answer": "B", "options": {"A": "80-100次", "B": "100-120次", "C": "120-140次", "D": "200次"}}, {"id": 151, "question": "心肺复苏终止的条件不包括", "type": "单选题", "answer": "D", "options": {"A": "病人已恢复自主呼吸", "B": "有医务人员到达现场接替", "C": "可触及颈动脉的搏动，病人恢复意识。", "D": "自己判断伤员死亡"}}, {"id": 152, "question": "心肺复苏时口对口人工呼吸的方法是", "type": "单选题", "answer": "C", "options": {"A": "打开气道，深吸气，张口向病人口内吹气，连续两次", "B": "捏住病人鼻孔，深吸气，张口向病人口内吹气", "C": "保持病人呼吸道畅通，一手捏紧病人鼻孔，吸气后张口包牢病人口部向内吹气", "D": "打开气道后，深吸气并包牢病人口部向内吹起"}}, {"id": 153, "question": "成人心肺复苏的有效指标说法错误的是：", "type": "单选题", "answer": "A", "options": {"A": "按压深度3-5厘米", "B": "按压频率在每分钟100次", "C": "每次按压至少达到5厘米", "D": "中断心脏按压的时间应控制于10秒之内"}}, {"id": 154, "question": "我司机上配备的救生船充气时间为______秒", "type": "单选题", "answer": "A", "options": {"A": "15至30", "B": "40", "C": "50", "D": "60"}}, {"id": 155, "question": "机上配备的救生衣在水中定位灯亮起后可持续亮______小时", "type": "单选题", "answer": "D", "options": {"A": "3至5", "B": "7至9", "C": "6至8", "D": "8至10"}}, {"id": 156, "question": "飞机上配备的麦克风应保证每____名旅客有一个扩音器，超过____名应配备两个。", "type": "单选题", "answer": "A", "options": {"A": "99,99", "B": "49,49", "C": "49,50", "D": "99100"}}, {"id": 157, "question": "洗手间的的垃圾箱自动灭火装置使用时间为_______秒。", "type": "单选题", "answer": "C", "options": {"A": "5—10秒", "B": "3—10秒", "C": "3—15秒", "D": "10—20秒"}}, {"id": 158, "question": "当洗手间的的垃圾箱温度到大约_____摄氏度，灭火器两个喷嘴的热熔剂融化，灭火物质流入垃圾桶", "type": "单选题", "answer": "B", "options": {"A": "60", "B": "77", "C": "85", "D": "100"}}, {"id": 159, "question": "海伦灭火瓶的喷射时间为：", "type": "单选题", "answer": "C", "options": {"A": "5秒", "B": "7秒", "C": "8-10秒", "D": "15秒"}}, {"id": 160, "question": "每架飞机在载客飞行中所配卫生防疫包的数量不得少于每（    ）旅客座位1个。", "type": "单选题", "answer": "B", "options": {"A": "50", "B": "100", "C": "150", "D": "200"}}, {"id": 161, "question": "旅客座位数位101-200座的机型，应配（    ）急救箱", "type": "单选题", "answer": "A", "options": {"A": "2", "B": "3", "C": "4", "D": "5"}}, {"id": 162, "question": "(  )是用于对旅客或机组人员受伤的止血、包扎、固定等应急处理", "type": "单选题", "answer": "B", "options": {"A": "应急医疗箱", "B": "急救药箱", "C": "卫生防疫包", "D": "乘务长药箱"}}, {"id": 163, "question": "下列关于客舱内声称劫机或有爆炸物的说法，错误的一项是", "type": "单选题", "answer": "A", "options": {"A": "起飞前，机组不应向周围旅客讲明情况，以未定旅客情绪，防止事态扩大。", "B": "起飞后，如行为人有其他过激行为，应予以约束，等降落后移交当地机场公安局处理", "C": "起飞前，机组动员知情旅客积极配合公安机关调查取证，或请旅客提供亲笔证词", "D": "起飞后，如行为人无其他过激行为，可在飞行途中安排专人控制，待飞机降落目的地后移交当地机场公安局处理"}}, {"id": 164, "question": "飞行高度40000英尺时，不戴氧气面具的有用知觉时间是（   ）", "type": "单选题", "answer": "D", "options": {"A": "3-5分钟", "B": "1-2分钟", "C": "15秒", "D": "18秒"}}, {"id": 165, "question": "当飞机前轮折断时，可使用的出口为", "type": "单选题", "answer": "B", "options": {"A": "翼上出口不可以使用", "B": "前部（机翼前缘）的应急门/应急窗", "C": "所有出口", "D": "以上说法都正确"}}, {"id": 166, "question": "陆地撤离应首先选择垂直于飞机的方向逃离，然后选择到风上侧躲避,远离飞机至少以外（）米", "type": "单选题", "answer": "B", "options": {"A": "50米", "B": "200米", "C": "50英尺", "D": "100英尺"}}, {"id": 167, "question": "“危险十一分钟”是指", "type": "单选题", "answer": "D", "options": {"A": "起飞后8分钟，落地前3分钟", "B": "起飞后4分钟，落地全7分钟", "C": "起飞前3分钟，落地后8分钟", "D": "起飞3分钟，落地前8分钟"}}, {"id": 168, "question": "在野外求生时，遇有不干净的水最少煮______分钟", "type": "单选题", "answer": "A", "options": {"A": "5", "B": "6", "C": "9", "D": "10"}}, {"id": 169, "question": "发生释压时，氧气面罩的佩戴顺序", "type": "单选题", "answer": "C", "options": {"A": "先旅客后机组", "B": "先小孩后家长", "C": "先本人后他人", "D": "先男人后女人"}}, {"id": 170, "question": "二度烧伤的处理错误的是______", "type": "单选题", "answer": "D", "options": {"A": "未破的水泡可以用冷水冲洗以减轻疼痛", "B": "已破的水泡用干燥的消毒绷带包扎，将烧伤肢体轻轻抬起。", "C": "已破的水泡不要冲水", "D": "最好将未破的水泡挑破并上烫伤药以促进创面愈合"}}, {"id": 171, "question": "处理背部和颈部损伤的病人应______。", "type": "单选题", "answer": "D", "options": {"A": "尽可能不要搬动病人", "B": "不要使病人抬头或扭转头部", "C": "保暖", "D": "以上全对"}}, {"id": 172, "question": "对心绞痛患者处理方法不正确的是", "type": "单选题", "answer": "D", "options": {"A": "松开其紧身衣物", "B": "密切观察、关心和安慰患者", "C": "寻求医务人员帮助", "D": "为保障呼吸通畅，陪伴患者在客舱内走动"}}, {"id": 173, "question": "关于固定原则说法不正确的是_______", "type": "单选题", "answer": "A", "options": {"A": "开放性骨折，刺出的骨端可以送回去。", "B": "上夹板时，首先固定夹板两端，后固定上下关节。", "C": "没有夹板时可用木板、木棍及竹竿等代替。", "D": "夹板上应包以棉花，以免夹上皮肤。"}}, {"id": 174, "question": "压耳的症状主要是_____。", "type": "单选题", "answer": "B", "options": {"A": "头晕、恶心、呕吐", "B": "耳痛、耳鸣、听力下降、头晕、有时晕眩", "C": "耳痛、头痛、流眼泪等", "D": "耳鸣、眩晕、胀气"}}, {"id": 175, "question": "当座舱高度达到40000英尺人体的反应是", "type": "单选题", "answer": "C", "options": {"A": "15秒", "B": "1-2分钟", "C": "生存18秒", "D": "生存3-5 分钟"}}, {"id": 176, "question": "安全高度通常指海拔______ 米（______ 英尺）左右、人类无须额外的氧气以及没有增压帮助下生存的高度", "type": "单选题", "answer": "A", "options": {"A": "3000  10000", "B": "1000   3000", "C": "10000   30000", "D": "10000   3000"}}, {"id": 177, "question": "若前轮和主轮全部折断的情况下", "type": "单选题", "answer": "A", "options": {"A": "所有出口可以使用", "B": "所有的机门和出口不可以使用", "C": "前机门不可使用，后机门可正常使用", "D": "后机门不可使用，前机门可正常使用"}}, {"id": 178, "question": "当座舱高度达到（    ）时，氧气面罩会自动脱落", "type": "单选题", "answer": "C", "options": {"A": "10000英尺", "B": "25000英尺", "C": "14000英尺", "D": "3000英尺"}}, {"id": 179, "question": "安全高度通常指海拔", "type": "单选题", "answer": "B", "options": {"A": "2500米", "B": "3000米", "C": "3500米", "D": "4000米"}}, {"id": 180, "question": "机上指挥权的接替顺序为（   ）", "type": "单选题", "answer": "A", "options": {"A": "机长-其他机长-副驾驶-观察员-乘务长-经验较丰富的乘务员、安全员", "B": "机长-副驾驶-观察员-乘务长-乘务员、安全员", "C": "机长-副驾驶-观察员-乘务长-安全员-乘务员", "D": "机长-副驾驶-其他机长-观察员-乘务长-乘务员、安全员"}}, {"id": 181, "question": "防爆专家的三字代码是什么？", "type": "单选题", "answer": "A", "options": {"A": "EOD", "B": "ATC", "C": "ATPL", "D": "STS"}}, {"id": 182, "question": "如在机上发现可疑爆炸物，把旅客转移至距离可疑物品越远越好，至少在什么距离？", "type": "单选题", "answer": "C", "options": {"A": "5排以上", "B": "4米以上", "C": "4排以上", "D": "3排以上"}}, {"id": 183, "question": "B737飞机最低风险爆炸区的位置在哪里？", "type": "单选题", "answer": "C", "options": {"A": "左后舱门中部", "B": "右后舱门中部", "C": "右后舱门下部", "D": "左后舱门下部"}}, {"id": 184, "question": "不干净的水至少煮沸多长时间后可以饮用？", "type": "单选题", "answer": "A", "options": {"A": "5分钟", "B": "10分钟", "C": "8分钟", "D": "15分钟"}}, {"id": 185, "question": "如因危险品泄露发生撤离，应该远离飞机多少米？", "type": "单选题", "answer": "A", "options": {"A": "300米", "B": "100米", "C": "200米", "D": "150米"}}, {"id": 186, "question": "水上撤离后飞机在水面漂浮时间最长不会超过多少分钟？", "type": "单选题", "answer": "B", "options": {"A": "20分钟", "B": "60分钟", "C": "13分钟", "D": "30分钟"}}, {"id": 187, "question": "紧急撤离后幸存者分组时多少人一组？", "type": "单选题", "answer": "C", "options": {"A": "20人以内", "B": "8-15人", "C": "25人以内", "D": "4-30人"}}, {"id": 188, "question": "主起落架完全收起/折断（机头高）可以使用的出口是哪个？", "type": "单选题", "answer": "B", "options": {"A": "所有出口", "B": "较低的应急门窗", "C": "前部的应急门窗", "D": "后部的应急门窗"}}, {"id": 189, "question": "使用止血带止血时，要定时放松止血带以使远端肢体得到保证不会缺血坏死的血供。一般应至少每（）分钟放松一次。", "type": "单选题", "answer": "B", "options": {"A": "40分钟", "B": "30分钟", "C": "50分钟", "D": "20分钟"}}, {"id": 190, "question": "心肺复苏由一人进行时，吹气与心脏按压的比例是：（  ）", "type": "单选题", "answer": "A", "options": {"A": "2:30", "B": "1:15", "C": "30:2", "D": "2:15"}}, {"id": 191, "question": "成人胸外心脏按压的部位是病人胸部正中乳头连线水平胸骨下（ ）。", "type": "单选题", "answer": "A", "options": {"A": "二分之一", "B": "三分之一", "C": "三分之二", "D": "四分之一"}}, {"id": 192, "question": "不属于生命体征是：（  ）", "type": "单选题", "answer": "D", "options": {"A": "脉搏", "B": "呼吸", "C": "体温", "D": "心跳"}}, {"id": 193, "question": "飞机停稳后多长时间若没有来自驾驶舱的指令，若无危及声明的情况，乘务长立即联络驾驶舱？", "type": "单选题", "answer": "A", "options": {"A": "30秒", "B": "立即", "C": "1分钟", "D": "20秒"}}, {"id": 194, "question": "在飞机接地前多长时间，驾驶舱会发出防冲击信号，500英尺，采取防冲击姿势。", "type": "单选题", "answer": "C", "options": {"A": "30秒", "B": "50秒", "C": "1分钟", "D": "20秒"}}];
+ const STORAGE_KEY = 'kukukude_state';
+ 
+ let state = loadState();
+ let questionOrder = [];
+ let currentQuestionIdx = 0;
+ 
+ function getDefaultState() {
+     return { banks: {}, bankOrder: [], activeBankId: null, version: 1 };
+ }
+ 
+ function loadState() {
+     try {
+         const raw = localStorage.getItem(STORAGE_KEY);
+         if (raw) return JSON.parse(raw);
+     } catch(e) {}
+     return getDefaultState();
+ }
+ 
+ function saveState() {
+     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+     catch(e) { showToast('存储空间已满'); }
+ }
+ 
+ function initDefaultBank() {
+     const bankId = 'bank_default';
+     if (!state.banks[bankId]) {
+         state.banks[bankId] = {
+             id: bankId, name: '飞行安全员题库',
+             questions: DEFAULT_QUESTIONS, progress: {}
+         };
+         state.bankOrder.push(bankId);
+     }
+     if (!state.activeBankId) state.activeBankId = bankId;
+     const bank = state.banks[bankId];
+     bank.questions.forEach(q => {
+         const key = String(q.id);
+         if (!bank.progress[key])
+             bank.progress[key] = { answered: false, correct: false, wrong: false, bookmarked: false };
+     });
+     saveState();
+ }
+ 
+ function getActiveBank() { return state.banks[state.activeBankId]; }
+ 
+ function showPage(pageId) {
+     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+     document.getElementById(pageId).classList.add('active');
+ }
+ 
+ function goHome() { showPage('pageHome'); renderBankList(); }
+ 
+ function goPractice() {
+     showPage('pagePractice');
+     const bank = getActiveBank();
+     document.getElementById('practiceBankName').textContent = bank.name;
+     buildQuestionOrder();
+     renderCurrentQuestion();
+ }
+ 
+ function openModal(id) { document.getElementById(id).classList.add('show'); }
+ function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+ 
+ let toastTimer = null;
+ function showToast(msg) {
+     const el = document.getElementById('toast');
+     el.textContent = msg; el.classList.add('show');
+     clearTimeout(toastTimer);
+     toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+ }
+ 
+ function renderBankList() {
+     const container = document.getElementById('bankList');
+     if (state.bankOrder.length === 0) {
+         container.innerHTML = '<div class="empty-state"><div class="icon">📚</div><h3>还没有题库</h3><p>点击右下角的 + 按钮<br>导入 Excel 或 JSON 题库文件</p></div>';
+         document.getElementById('fabBtn').style.display = 'flex';
+         return;
+     }
+     let html = '';
+     state.bankOrder.forEach(bankId => {
+         const bank = state.banks[bankId];
+         if (!bank) return;
+         let total = bank.questions.length;
+         let answered = 0, correct = 0;
+         Object.values(bank.progress).forEach(p => { if (p.answered) answered++; if (p.correct) correct++; });
+         const acc = answered > 0 ? Math.round(correct/answered*100) : 0;
+         const pct = total > 0 ? Math.round(answered/total*100) : 0;
+         html += '<div class="bank-card" onclick="selectBank(\''+bankId+'\')">';
+         html += '<div class="bank-actions">';
+         html += '<button onclick="event.stopPropagation();exportBank(\''+bankId+'\')" title="导出">📤</button>';
+         html += '<button onclick="event.stopPropagation();showBankSettings(\''+bankId+'\')" title="设置">⚙</button>';
+         html += '</div>';
+         html += '<div class="bank-name"><span>'+bank.name+'</span>';
+         if (bankId === state.activeBankId) html += '<span class="badge">当前</span>';
+         html += '</div>';
+         html += '<div class="bank-stats">';
+         html += '<span>📝 '+total+'题</span>';
+         html += '<span>✅ '+answered+'/'+total+' ('+pct+'%)</span>';
+         html += '<span>🎯 '+acc+'%</span>';
+         html += '</div></div>';
+     });
+     container.innerHTML = html;
+ }
+ 
+ function selectBank(bankId) {
+     state.activeBankId = bankId; saveState(); goPractice();
+ }
+ 
+ function buildQuestionOrder() {
+     const bank = getActiveBank(); if (!bank) return;
+     const mode = getCurrentMode(); let ids = [];
+     if (mode === 'wrong') {
+         ids = Object.entries(bank.progress).filter(([k,p]) => p.wrong).map(([k]) => parseInt(k)).sort((a,b)=>a-b);
+     } else if (mode === 'bookmark') {
+         ids = Object.entries(bank.progress).filter(([k,p]) => p.bookmarked).map(([k]) => parseInt(k)).sort((a,b)=>a-b);
+     } else if (mode === 'random') {
+         ids = bank.questions.map(q => q.id);
+         for (let i = ids.length-1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [ids[i],ids[j]] = [ids[j],ids[i]]; }
+     } else {
+         ids = bank.questions.map(q => q.id);
+     }
+     questionOrder = ids; currentQuestionIdx = 0;
+ }
+ 
+ function getCurrentMode() {
+     const t = document.querySelector('#modeTabs .mode-tab.active');
+     return t ? t.dataset.mode : 'sequential';
+ }
+ 
+ function switchMode(mode) {
+     document.querySelectorAll('#modeTabs .mode-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+     buildQuestionOrder();
+     const names = {wrong:'错题',bookmark:'收藏',sequential:'顺序',random:'随机'};
+     if (questionOrder.length === 0) {
+         document.getElementById('questionArea').innerHTML = '<div class="empty-state" style="padding:40px 20px"><div class="icon">📭</div><h3>暂无'+names[mode]+'题目</h3><p>'+
+             (mode==='wrong'?'做错的题会自动出现在这里':'点击题目上的 ☆ 收藏题目')+'</p></div>';
+         updateProgress(); return;
+     }
+     currentQuestionIdx = 0; renderCurrentQuestion();
+ }
+ 
+ function renderCurrentQuestion() {
+     const area = document.getElementById('questionArea');
+     if (questionOrder.length === 0) {
+         area.innerHTML = '<div class="empty-state" style="padding:40px 20px"><div class="icon">🎉</div><h3>没有可显示的题目</h3></div>';
+         updateProgress(); return;
+     }
+     if (currentQuestionIdx >= questionOrder.length) currentQuestionIdx = questionOrder.length-1;
+     if (currentQuestionIdx < 0) currentQuestionIdx = 0;
+     const qId = questionOrder[currentQuestionIdx];
+     const bank = getActiveBank();
+     const question = bank.questions.find(q => q.id === qId);
+     if (!question) return;
+     const prog = bank.progress[String(qId)];
+     const isAnswered = prog && prog.answered;
+     const isBookmarked = prog && prog.bookmarked;
+     const isMulti = question.type.includes('多选');
+     const total = questionOrder.length;
+     const modeTexts = {sequential:'顺序模式',random:'随机模式',wrong:'错题专练',bookmark:'收藏复习'};
+     const modeText = modeTexts[getCurrentMode()] || '';
+ 
+     let optHtml = '<div class="options">';
+     if (question.type.includes('判断')) {
+         ['对','错'].forEach(v => {
+             let cls = isAnswered ? (question.answer===v?'correct disabled':'wrong disabled') : '';
+             optHtml += '<button class="option-btn '+cls+'" onclick="selectOption(this,'+question.id+',\''+v+'\')"'+(isAnswered?' disabled':'')+'>';
+             optHtml += '<span class="option-label">'+v+'</span><span class="option-text">'+v+'</span></button>';
+         });
+     } else {
+         Object.keys(question.options).forEach(k => {
+             let cls = '';
+             if (isAnswered) {
+                 if (question.answer.includes(k)) cls = 'correct disabled';
+                 else if (prog && prog.selectedAnswer && prog.selectedAnswer.includes(k) && !question.answer.includes(k)) cls = 'wrong disabled';
+             }
+             const val = question.options[k].replace(/'/g,"\\'");
+             optHtml += '<button class="option-btn '+cls+'" data-key="'+k+'" onclick="selectOption(this,'+question.id+',\''+k+'\')"'+(isAnswered?' disabled':'')+'>';
+             optHtml += '<span class="option-label">'+k+'</span><span class="option-text">'+val+'</span></button>';
+         });
+     }
+     optHtml += '</div>';
+ 
+     let fbHtml = '';
+     if (isAnswered) {
+         fbHtml = '<div class="answer-feedback '+(prog.correct?'correct':'wrong')+'">'+
+             (prog.correct?'✅ 回答正确！':'❌ 回答错误')+
+             '<div class="correct-answer">正确答案: '+question.answer+'</div></div>';
+     }
+ 
+     const confirmHtml = isMulti ? '<button class="confirm-btn" id="confirmMultiBtn" onclick="confirmMultiSelect('+question.id+')">确认提交</button>' : '';
+     document.getElementById('bookmarkBtn').textContent = isBookmarked ? '★' : '☆';
+     document.getElementById('bookmarkBtn').classList.toggle('active', isBookmarked);
+ 
+     area.innerHTML = '<div class="question-number">第 '+(currentQuestionIdx+1)+' / '+total+' 题 <span style="color:var(--text-secondary);font-weight:400;">· '+modeText+'</span></div>'+
+         '<div class="question-type">'+question.type+'</div>'+
+         '<div class="question-text">'+question.question+'</div>'+
+         optHtml+fbHtml+confirmHtml+
+         '<div class="nav-buttons">'+
+         '<button class="nav-btn" onclick="navQuestion(-1)"'+(currentQuestionIdx<=0?' disabled':'')+'>◀ 上一题</button>'+
+         '<button class="nav-btn" onclick="openNavigator()">☰ 导航</button>'+
+         '<button class="nav-btn primary" onclick="navQuestion(1)"'+(currentQuestionIdx>=questionOrder.length-1?' disabled':'')+'>下一题 ▶</button>'+
+         '</div>';
+     updateProgress();
+ }
+ 
+ function selectOption(btn, qId, value) {
+     const bank = getActiveBank();
+     const question = bank.questions.find(q => q.id === qId);
+     if (!question) return;
+     const prog = bank.progress[String(qId)];
+     if (prog && prog.answered) return;
+     const isMulti = question.type.includes('多选');
+     if (isMulti) {
+         btn.classList.toggle('selected');
+         const sel = document.querySelectorAll('.option-btn.selected');
+         document.getElementById('confirmMultiBtn').classList.toggle('show', sel.length > 0);
+         return;
+     }
+     const correct = question.type.includes('判断') ? question.answer === value : question.answer.includes(value);
+     document.querySelectorAll('.option-btn').forEach(b => { b.classList.add('disabled'); b.disabled = true; });
+     if (correct) { btn.classList.add('correct'); }
+     else {
+         btn.classList.add('wrong');
+         document.querySelectorAll('.option-btn').forEach(b => {
+             const key = b.dataset.key || b.querySelector('.option-label').textContent;
+             if (question.answer.includes(key)) b.classList.add('correct');
+         });
+     }
+     bank.progress[String(qId)] = { answered: true, correct, wrong: !correct, bookmarked: !!(prog&&prog.bookmarked), selectedAnswer: value };
+     saveState();
+     const fb = document.createElement('div');
+     fb.className = 'answer-feedback '+(correct?'correct':'wrong');
+     fb.innerHTML = correct ? '✅ 回答正确！' : '❌ 回答错误';
+     if (!correct) fb.innerHTML += '<div class="correct-answer">正确答案: '+question.answer+'</div>';
+     document.querySelector('.options').after(fb);
+     updateProgress();
+     setTimeout(() => { if (currentQuestionIdx < questionOrder.length-1) navQuestion(1); }, correct ? 800 : 1500);
+ }
+ 
+ function confirmMultiSelect(qId) {
+     const bank = getActiveBank(); const question = bank.questions.find(q => q.id === qId);
+     const selected = document.querySelectorAll('.option-btn.selected');
+     const keys = []; selected.forEach(b => keys.push(b.dataset.key));
+     if (keys.length === 0) return;
+     const userAns = keys.sort().join(''); const corrAns = question.answer.split('').map(s=>s.trim()).sort().join('');
+     const isCorrect = userAns === corrAns;
+     document.querySelectorAll('.option-btn').forEach(b => {
+         b.classList.add('disabled'); b.disabled = true;
+         const k = b.dataset.key;
+         if (question.answer.includes(k)) b.classList.add('correct');
+         else if (keys.includes(k)) b.classList.add('wrong');
+     });
+     document.getElementById('confirmMultiBtn').classList.remove('show');
+     bank.progress[String(qId)] = { answered: true, correct: isCorrect, wrong: !isCorrect, bookmarked: !!(bank.progress[String(qId)]&&bank.progress[String(qId)].bookmarked), selectedAnswer: keys.join('') };
+     saveState();
+     const fb = document.createElement('div');
+     fb.className = 'answer-feedback '+(isCorrect?'correct':'wrong');
+     fb.innerHTML = isCorrect ? '✅ 回答正确！' : '❌ 回答错误';
+     fb.innerHTML += '<div class="correct-answer">正确答案: '+question.answer.split('').join(', ')+'</div>';
+     (document.getElementById('confirmMultiBtn')||document.querySelector('.options')).after(fb);
+     updateProgress();
+     setTimeout(() => { if (currentQuestionIdx < questionOrder.length-1) navQuestion(1); }, 1500);
+ }
+ 
+ function navQuestion(dir) {
+     const ni = currentQuestionIdx + dir;
+     if (ni < 0 || ni >= questionOrder.length) return;
+     currentQuestionIdx = ni; renderCurrentQuestion();
+ }
+ 
+ function toggleBookmark() {
+     const bank = getActiveBank(); if (!bank || questionOrder.length === 0) return;
+     const key = String(questionOrder[currentQuestionIdx]);
+     if (!bank.progress[key]) bank.progress[key] = { answered: false, correct: false, wrong: false, bookmarked: false };
+     bank.progress[key].bookmarked = !bank.progress[key].bookmarked;
+     saveState();
+     document.getElementById('bookmarkBtn').textContent = bank.progress[key].bookmarked ? '★' : '☆';
+     document.getElementById('bookmarkBtn').classList.toggle('active', bank.progress[key].bookmarked);
+     showToast(bank.progress[key].bookmarked ? '已收藏 ✨' : '取消收藏');
+ }
+ 
+ function updateProgress() {
+     const bank = getActiveBank(); if (!bank) return;
+     const answeredCnt = Object.values(bank.progress).filter(p => p.answered).length;
+     const correctCnt = Object.values(bank.progress).filter(p => p.correct).length;
+     const total = bank.questions.length;
+     const pct = total > 0 ? Math.round(answeredCnt/total*100) : 0;
+     const acc = answeredCnt > 0 ? Math.round(correctCnt/answeredCnt*100) : 0;
+     document.getElementById('progressFill').style.width = pct+'%';
+     document.getElementById('progressText').textContent = answeredCnt+'/'+total;
+     document.getElementById('accuracyText').textContent = '正确率: '+acc+'%';
+ }
+ 
+ function openNavigator() {
+     const bank = getActiveBank(); if (!bank) return;
+     const grid = document.getElementById('questionGrid');
+     let html = '';
+     bank.questions.forEach(q => {
+         const p = bank.progress[String(q.id)];
+         let cls = p && p.answered ? (p.correct ? 'answered-correct' : 'answered-wrong') : '';
+         const isCurrent = questionOrder.length > 0 && questionOrder[currentQuestionIdx] === q.id;
+         html += '<div class="q-grid-item '+cls+(isCurrent?' current':'')+'" onclick="navigateToQuestion('+q.id+')">'+q.id+
+             (p&&p.bookmarked?'<span style="position:absolute;top:-2px;right:2px;font-size:10px;color:#FFD700;">★</span>':'')+'</div>';
+     });
+     grid.innerHTML = html; openModal('modalNavigator');
+ }
+ 
+ function navigateToQuestion(qId) {
+     const idx = questionOrder.indexOf(qId);
+     if (idx >= 0) { currentQuestionIdx = idx; closeModal('modalNavigator'); renderCurrentQuestion(); }
+ }
+ 
+ let pendingImportData = null;
+ function showImport() {
+     document.getElementById('importTitle').textContent = '导入题库';
+     document.getElementById('importPreview').innerHTML = '';
+     document.getElementById('bankNameInput').value = '';
+     document.getElementById('confirmImportBtn').disabled = true;
+     pendingImportData = null; openModal('modalImport');
+ }
+ 
+ function handleFileSelect(event) {
+     const file = event.target.files[0]; if (!file) return;
+     const reader = new FileReader();
+     const name = file.name.replace(/\.[^/.]+$/, '');
+     document.getElementById('bankNameInput').value = name;
+     if (file.name.endsWith('.json')) {
+         reader.onload = function(e) {
+             try {
+                 const d = JSON.parse(e.target.result);
+                 processImportedData(Array.isArray(d) ? d : (d.questions || []));
+             } catch(err) { showToast('JSON 解析失败'); }
+         };
+         reader.readAsText(file, 'utf-8');
+     } else {
+         reader.onload = function(e) {
+             try {
+                 const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+                 const s = wb.Sheets[wb.SheetNames[0]];
+                 processExcelData(XLSX.utils.sheet_to_json(s, {defval:''}));
+             } catch(err) { showToast('Excel 解析失败'); }
+         };
+         reader.readAsArrayBuffer(file);
+     }
+ }
+ 
+ function processExcelData(rows) {
+     if (rows.length < 2) { showToast('数据不足'); return; }
+     const headers = Object.keys(rows[0]);
+     let qCol = null, aCol = null, typeCol = null, optCols = {};
+     const labels = ['A','B','C','D','E','F','G'];
+     headers.forEach(h => {
+         const hh = String(h).trim();
+         if (/^题目|问题|question|题目内容|考题/i.test(hh)) qCol = h;
+         else if (/^答案|answer|正确答案|正确|标准答案/i.test(hh)) aCol = h;
+         else if (/^类型|type|题型|类别|种类/i.test(hh)) typeCol = h;
+     });
+     headers.forEach(h => {
+         const hh = String(h).trim();
+         if (/^选项|选[A-G]|^[A-G]$|option/i.test(hh)) {
+             let l = hh.replace(/^选项|option\s*/i,'').trim();
+             if (l.length===1 && l>='A' && l<='G') optCols[l] = h;
+         }
+     });
+     if (Object.keys(optCols).length === 0) {
+         headers.forEach(h => {
+             if (h===qCol||h===aCol||h===typeCol) return;
+             const l = labels[Object.keys(optCols).length];
+             if (l) optCols[l] = h;
+         });
+     }
+     const questions = [];
+     rows.forEach((row,idx) => {
+         const qText = qCol ? String(row[qCol]||'').trim() : '';
+         if (!qText && idx < 5) return;
+         if (!qText) return;
+         const answer = aCol ? String(row[aCol]||'').trim() : '';
+         const rawType = typeCol ? String(row[typeCol]||'').trim() : '';
+         let detectedType = rawType;
+         if (!detectedType) {
+             if (answer === '对'||answer === '错'||answer === '正确'||answer === '错误') detectedType = '判断题';
+             else if (answer && answer.length > 1 && /^[A-G\s]+$/.test(answer)) detectedType = '多选题';
+             else if (answer && answer.length === 1 && answer >= 'A' && answer <= 'G') detectedType = '单选题';
+             else detectedType = '判断题';
+         }
+         const options = {};
+         Object.keys(optCols).forEach(label => {
+             const val = String(row[optCols[label]]||'').trim();
+             if (val) options[label] = val;
+         });
+         if (detectedType.includes('判断') && Object.keys(options).length === 0) { options['对']='对'; options['错']='错'; }
+         questions.push({ id: idx+1, question: qText, type: detectedType, answer, options });
+     });
+     if (questions.length === 0) { showToast('未能识别出题目'); return; }
+     processImportedData(questions);
+ }
+ 
+ function processImportedData(questions) {
+     const preview = document.getElementById('importPreview');
+     const types = {}; questions.forEach(q => { types[q.type] = (types[q.type]||0)+1; });
+     const typeStr = Object.entries(types).map(([k,v]) => k+' '+v+'题').join('、');
+     let html = '<div style="margin-top:12px;padding:12px;background:rgba(108,92,231,0.1);border-radius:8px;">';
+     html += '<strong>识别结果：'+questions.length+'道题</strong><br>';
+     html += '<span style="font-size:13px;color:var(--text-secondary);">'+typeStr+'</span></div>';
+     if (questions.length > 0) {
+         html += '<table class="preview-table"><thead><tr><th>#</th><th>题目</th><th>类型</th><th>答案</th></tr></thead><tbody>';
+         questions.slice(0,5).forEach(q => {
+             html += '<tr><td>'+q.id+'</td><td>'+(q.question.length>30?q.question.substring(0,30)+'...':q.question)+'</td><td>'+q.type+'</td><td>'+q.answer+'</td></tr>';
+         });
+         if (questions.length > 5) html += '<tr><td colspan="4" style="text-align:center;color:var(--text-secondary);">... 还有 '+(questions.length-5)+' 道题</td></tr>';
+         html += '</tbody></table>';
+     }
+     preview.innerHTML = html;
+     document.getElementById('confirmImportBtn').disabled = false;
+     pendingImportData = questions;
+ }
+ 
+ function confirmImport() {
+     if (!pendingImportData) return;
+     const name = document.getElementById('bankNameInput').value.trim();
+     if (!name) { showToast('请输入题库名称'); return; }
+     const bankId = 'bank_'+Date.now();
+     const progress = {};
+     pendingImportData.forEach(q => { progress[String(q.id)] = { answered: false, correct: false, wrong: false, bookmarked: false }; });
+     state.banks[bankId] = { id: bankId, name, questions: pendingImportData, progress };
+     state.bankOrder.push(bankId);
+     state.activeBankId = bankId;
+     saveState();
+     closeModal('modalImport');
+     showToast('导入成功！共 '+pendingImportData.length+' 题 ✅');
+     renderBankList();
+     pendingImportData = null;
+     setTimeout(() => goPractice(), 500);
+ }
+ 
+ function showBankSettings(bankId) {
+     const bank = state.banks[bankId]; if (!bank) return;
+     document.getElementById('settingsTitle').textContent = bank.name+' - 设置';
+     document.getElementById('settingsList').innerHTML =
+         '<div class="setting-item"><span class="label">重命名</span><input type="text" id="renameInput" value="'+bank.name.replace(/'/g,"\\'")+'" style="padding:6px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px;width:150px;"></div>'+
+         '<div class="setting-item"><span class="label">导出题库</span><button class="action-btn primary" onclick="exportBank(\''+bankId+'\')">导出 JSON</button></div>'+
+         '<div class="setting-item"><span class="label">重置进度</span><button class="action-btn primary" onclick="resetProgress(\''+bankId+'\')">重置</button></div>'+
+         '<div class="danger-zone"><p>删除后将无法恢复</p><button onclick="deleteBank(\''+bankId+'\')">🗑 删除此题库</button></div>';
+     openModal('modalBankSettings');
+     setTimeout(() => {
+         const inp = document.getElementById('renameInput');
+         if (inp) inp.addEventListener('change', function(){
+             const n = this.value.trim();
+             if (n) { state.banks[bankId].name = n; saveState(); renderBankList(); document.getElementById('settingsTitle').textContent = n+' - 设置'; }
+         });
+     }, 100);
+ }
+ 
+ function exportBank(bankId) {
+     const bank = state.banks[bankId]; if (!bank) return;
+     const data = { name: bank.name, exportDate: new Date().toISOString().split('T')[0], totalQuestions: bank.questions.length, questions: bank.questions };
+     const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+     const url = URL.createObjectURL(blob);
+     const a = document.createElement('a'); a.href = url; a.download = bank.name+'_题库.json';
+     document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+     showToast('导出成功 📤');
+ }
+ 
+ function resetProgress(bankId) {
+     if (!confirm('确定要重置所有进度吗？')) return;
+     Object.keys(state.banks[bankId].progress).forEach(k => { state.banks[bankId].progress[k] = { answered:false, correct:false, wrong:false, bookmarked:false }; });
+     saveState(); showToast('已重置 🔄'); renderBankList();
+ }
+ 
+ function deleteBank(bankId) {
+     if (!confirm('确定要删除这个题库吗？不可恢复！')) return;
+     delete state.banks[bankId];
+     state.bankOrder = state.bankOrder.filter(id => id !== bankId);
+     if (state.activeBankId === bankId) state.activeBankId = state.bankOrder.length > 0 ? state.bankOrder[0] : null;
+     saveState(); closeModal('modalBankSettings'); renderBankList(); showToast('已删除');
+ }
+ 
+ initDefaultBank();
+ renderBankList();
+ 
+ let touchStartX = 0;
+ document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; });
+ document.addEventListener('touchend', e => {
+     const page = document.querySelector('.page.active');
+     if (page && page.id === 'pagePractice' && e.changedTouches[0].clientX - touchStartX > 80) goHome();
+ });
+ 
+ console.log('📚 酷酷的库 v1.0 loaded!');
+ </script>
+ </body>
+ </html>
