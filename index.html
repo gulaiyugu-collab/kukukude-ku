@@ -272,7 +272,46 @@
  ::-webkit-scrollbar-track{background:transparent;}
  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
  @media(min-width:481px){#app{border-left:1px solid var(--border);border-right:1px solid var(--border);}}
- </style>
+ 
+/* Search */
+.search-bar{display:flex;gap:8px;padding:8px 16px;background:var(--card);border-bottom:1px solid var(--border);}
+.search-bar input{flex:1;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;}
+.search-bar input:focus{outline:none;border-color:var(--primary);}
+
+/* Exam mode */
+.exam-setup{padding:20px;}
+.exam-setup h3{margin-bottom:16px;}
+.setup-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);}
+.setup-row label{font-size:15px;}
+.setup-row input[type=number]{width:80px;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:15px;text-align:center;}
+.setup-row select{padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px;}
+.start-exam-btn{width:100%;padding:14px;background:linear-gradient(135deg,#E17055,#D63031);border:none;border-radius:8px;color:#fff;font-size:16px;font-weight:600;cursor:pointer;margin-top:20px;}
+.exam-timer{background:var(--card);padding:8px 16px;display:flex;justify-content:space-between;align-items:center;font-size:14px;border-bottom:1px solid var(--border);}
+.exam-timer .time{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;}
+.exam-timer .time.warning{color:var(--error);}
+.exam-report{text-align:center;}
+.exam-report .score-circle{width:100px;height:100px;border-radius:50%;border:4px solid var(--success);display:flex;align-items:center;justify-content:center;margin:16px auto;font-size:32px;font-weight:700;}
+.exam-report .score-details{display:flex;flex-direction:column;gap:8px;margin:16px 0;text-align:left;}
+.score-detail-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px;}
+
+/* Goal */
+.goal-section{background:var(--card);border-radius:12px;padding:16px;margin-bottom:12px;}
+.goal-section .goal-header{display:flex;justify-content:space-between;margin-bottom:8px;}
+.goal-section .goal-header h4{font-size:15px;margin:0;}
+.goal-section .goal-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
+.goal-section .goal-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--success));border-radius:3px;transition:width 0.3s;}
+.edit-goal-btn{background:none;border:none;color:var(--primary-light);font-size:12px;cursor:pointer;}
+
+/* Stat cards */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:16px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;}
+.stat-card .stat-value{font-size:24px;font-weight:700;color:var(--text);}
+.stat-card .stat-label{font-size:12px;color:var(--text-secondary);margin-top:4px;}
+
+/* Print */
+@media print{.no-print{display:none!important;}body{background:#fff!important;color:#000!important;}.question-text{font-size:14px!important;}
+
+</style>
  </head>
  <body>
  
@@ -280,13 +319,13 @@
      <div class="app-header">
          <h1><span>📚</span>酷酷的库</h1>
          <div class="header-actions">
-             <button class="header-btn" onclick="showImport()" title="导入题库">📥</button>
+             <button class="header-btn" onclick="showStats()" title="统计">📊</button><button class="header-btn" onclick="showImport()" title="导入题库">📥</button>
          </div>
      </div>
  
      <div class="page-container" id="pageContainer">
          <div class="page active" id="pageHome">
-             <div class="bank-list" id="bankList"></div>
+             <div class="goal-section no-print" id="goalSection"><div class="goal-header"><h4>今日目标</h4><span><span id="goalProgress">0</span>/<span id="goalTarget">0</span> 题 <button class="edit-goal-btn" onclick="editGoal()">✏️</button></span></div><div class="goal-bar"><div class="goal-fill" id="goalFill" style="width:0%"></div></div></div><div class="bank-list" id="bankList"></div>
              <button class="fab" onclick="showImport()" id="fabBtn">+</button>
          </div>
  
@@ -299,11 +338,11 @@
                          <button class="mode-tab active" data-mode="sequential" onclick="switchMode('sequential')">顺序</button>
                          <button class="mode-tab" data-mode="random" onclick="switchMode('random')">随机</button>
                          <button class="mode-tab" data-mode="wrong" onclick="switchMode('wrong')">错题</button>
-                         <button class="mode-tab" data-mode="bookmark" onclick="switchMode('bookmark')">收藏</button>
+                         <button class="mode-tab" data-mode="bookmark" onclick="switchMode('bookmark')">收藏</button><button class="mode-tab" data-mode="exam" onclick="showExamSetup()">模拟</button>
                      </div>
                  </div>
                  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
-                 <div class="stats-row">
+                 <div class="search-bar no-print"><input type="text" id="searchInput" placeholder="搜索题目关键词..." oninput="searchQuestions(this.value)"><button class="header-btn" onclick="document.getElementById('searchInput').value='';searchQuestions('')" style="background:rgba(255,255,255,0.08);border:none;border-radius:50%;color:var(--text-secondary);width:36px;height:36px;font-size:16px;cursor:pointer;">✕</button></div><div class="stats-row">
                      <span id="progressText">0/0</span>
                      <span id="accuracyText">正确率: 0%</span>
                  </div>
@@ -314,7 +353,9 @@
      </div>
  </div>
  
- <div class="modal-overlay" id="modalNavigator" onclick="if(event.target===this)closeModal('modalNavigator')">
+ <div class="modal-overlay" id="modalStats" onclick="if(event.target===this)closeModal('modalStats')"><div class="modal-sheet"><div class="modal-handle"></div><h3>📊 学习统计</h3><div class="stat-grid" id="statsGrid"></div><button class="cancel-btn" onclick="closeModal('modalStats')">关闭</button></div></div>
+
+<div class="modal-overlay" id="modalNavigator" onclick="if(event.target===this)closeModal('modalNavigator')">
      <div class="modal-sheet">
          <div class="modal-handle"></div>
          <h3>题目导航</h3>
@@ -339,7 +380,9 @@
      </div>
  </div>
  
- <div class="modal-overlay" id="modalBankSettings" onclick="if(event.target===this)closeModal('modalBankSettings')">
+ <div class="modal-overlay" id="modalExamSetup" onclick="if(event.target===this)closeModal('modalExamSetup')"><div class="modal-sheet"><div class="modal-handle"></div><h3>📝 模拟考试设置</h3><div class="exam-setup"><div class="setup-row"><label>题目数量</label><input type="number" id="examCount" value="20" min="5" max="194"></div><div class="setup-row"><label>时间限制</label><select id="examTimeLimit"><option value="5">5 分钟</option><option value="10">10 分钟</option><option value="15" selected>15 分钟</option><option value="30">30 分钟</option><option value="60">60 分钟</option></select></div><div class="setup-row"><label>题目范围</label><select id="examType"><option value="all" selected>全部题型</option><option value="judge">仅判断题</option><option value="single">仅单选题</option><option value="multi">仅多选题</option></select></div><button class="cancel-btn" onclick="closeModal('modalExamSetup')">取消</button><button class="start-exam-btn" onclick="startExam()">🚀 开始考试</button></div></div></div>
+
+<div class="modal-overlay" id="modalBankSettings" onclick="if(event.target===this)closeModal('modalBankSettings')">
      <div class="modal-sheet">
          <div class="modal-handle"></div>
          <h3 id="settingsTitle">题库设置</h3>
@@ -455,7 +498,241 @@
      container.innerHTML = html;
  }
  
- function selectBank(bankId) {
+ 
+function searchQuestions(keyword){
+    document.getElementById('searchInput').focus();
+    if(!keyword||keyword.length<1){buildQuestionOrder();renderCurrentQuestion();return;}
+    const bank=getActiveBank();if(!bank)return;
+    const k=keyword.toLowerCase();
+    const ids=bank.questions.filter(function(q){return q.question.toLowerCase().includes(k)||(q.answer&&q.answer.toLowerCase().includes(k));}).map(function(q){return q.id;});
+    if(ids.length===0){document.getElementById('questionArea').innerHTML='<div class=\"empty-state\" style=\"padding:40px\"><div class=\"icon\">🔍</div><h3>未找到相关题目</h3></div>';return;}
+    questionOrder=ids;currentQuestionIdx=0;renderCurrentQuestion();
+}
+
+function startExam(){
+    closeModal('modalExamSetup');
+    var count=parseInt(document.getElementById('examCount').value)||20;
+    var timeLimit=parseInt(document.getElementById('examTimeLimit').value)||15;
+    var examType=document.getElementById('examType').value;
+    const bank=getActiveBank();if(!bank)return;
+    var pool=bank.questions;
+    if(examType==='judge')pool=pool.filter(function(q){return q.type.includes('判断');});
+    else if(examType==='single')pool=pool.filter(function(q){return q.type.includes('单选');});
+    else if(examType==='multi')pool=pool.filter(function(q){return q.type.includes('多选');});
+    if(pool.length===0){showToast('没有符合条件的题目');return;}
+    count=Math.min(count,pool.length);
+    var shuffled=[].concat(pool).sort(function(){return 0.5-Math.random();});
+    var selected=shuffled.slice(0,count);
+    var ids=selected.map(function(q){return q.id;});
+    // Switch to exam mode
+    document.querySelectorAll('#modeTabs .mode-tab').forEach(function(t){t.classList.toggle('active',t.dataset.mode==='exam');});
+    questionOrder=ids;currentQuestionIdx=0;
+    examState={active:true,startTime:Date.now(),timeLimit:timeLimit*60,answers:{},timer:null};
+    renderExamQuestion();
+    examState.timer=setInterval(function(){
+        var elapsed=Math.floor((Date.now()-examState.startTime)/1000);
+        var remaining=examState.timeLimit-elapsed;
+        var timerEl=document.getElementById('examTimer');
+        if(timerEl){
+            var min=Math.floor(remaining/60);var sec=remaining%60;
+            timerEl.textContent=min.toString().padStart(2,'0')+':'+sec.toString().padStart(2,'0');
+            timerEl.classList.toggle('warning',remaining<60);
+        }
+        if(remaining<=0){endExam();}
+    },1000);
+}
+var examState=null;
+
+function renderExamQuestion(){
+    if(!examState||!examState.active){switchMode('sequential');return;}
+    const area=document.getElementById('questionArea');
+    const bank=getActiveBank();
+    var answered=Object.keys(examState.answers).length;
+    var total=questionOrder.length;
+    var remaining=Math.floor((examState.timeLimit-Math.floor((Date.now()-examState.startTime)/1000))/60);
+    var timerHtml='<div class=\"exam-timer\" id=\"examTimerWrap\"><span class=\"exam-progress\">'+answered+'/'+total+'</span><span class=\"time\" id=\"examTimer\">'+Math.floor(remaining/60).toString().padStart(2,'0')+':'+(remaining%60).toString().padStart(2,'0')+'</span></div>';
+    
+    if(currentQuestionIdx>=questionOrder.length){currentQuestionIdx=questionOrder.length-1;}
+    if(currentQuestionIdx<0)currentQuestionIdx=0;
+    if(questionOrder.length===0){area.innerHTML=timerHtml+'<div class=\"empty-state\"><div class=\"icon\">🎉</div><h3>考试结束！</h3></div>';return;}
+    
+    const qId=questionOrder[currentQuestionIdx];
+    const q=bank.questions.find(function(x){return x.id===qId;});if(!q)return;
+    var isMulti=q.type.includes('多选');
+    var existingAnswer=examState.answers[String(qId)]||null;
+    
+    var optHtml='<div class=\"options\">';
+    if(q.type.includes('判断')){
+        ['对','错'].forEach(function(v){
+            var sel=existingAnswer===v?'selected':'';
+            optHtml+='<button class=\"option-btn '+sel+'\" onclick=\"examSelect(this,'+q.id+',\''+v+'\')\"><span class=\"option-label\">'+v+'</span><span class=\"option-text\">'+v+'</span></button>';
+        });
+    }else{
+        Object.keys(q.options).forEach(function(k){
+            var sel=existingAnswer&&existingAnswer.includes(k)?'selected':'';
+            var val=q.options[k].replace(/'/g,"\\'");
+            optHtml+='<button class=\"option-btn '+sel+'\" data-key=\"'+k+'\" onclick=\"examSelect(this,'+q.id+',\''+k+'\')\"><span class=\"option-label\">'+k+'</span><span class=\"option-text\">'+val+'</span></button>';
+        });
+    }
+    optHtml+='</div>';
+    var confirmHtml=isMulti?'<button class=\"confirm-btn\" onclick=\"examConfirmMulti('+q.id+')\" id=\"examConfirmBtn\">确认提交</button>':'';
+    
+    area.innerHTML=timerHtml+
+        '<div class=\"question-number\">第 '+(currentQuestionIdx+1)+'/'+total+' 题</div>'+
+        '<div class=\"question-type\">'+q.type+'</div>'+
+        '<div class=\"question-text\">'+q.question+'</div>'+
+        optHtml+confirmHtml+
+        '<div class=\"nav-buttons no-print\">'+
+        '<button class=\"nav-btn\" onclick=\"navQuestion(-1)\"'+(currentQuestionIdx<=0?' disabled':'')+'>◀ 上一题</button>'+
+        '<button class=\"nav-btn\" onclick=\"navQuestion(1)\">跳过 ▶</button>'+
+        '</div>'+
+        '<div class=\"nav-buttons no-print\"><button class=\"nav-btn primary\" onclick=\"endExam()\" style=\"background:var(--error);border-color:var(--error);\">✋ 交卷</button></div>';
+    
+    document.getElementById('bookmarkBtn').style.display='none';
+}
+
+function examSelect(btn,qId,value){
+    if(!examState||!examState.active)return;
+    const bank=getActiveBank();
+    const q=bank.questions.find(function(x){return x.id===qId;});if(!q)return;
+    if(q.type.includes('多选')){
+        btn.classList.toggle('selected');
+        var sel=document.querySelectorAll('.option-btn.selected');
+        var confirmBtn=document.getElementById('examConfirmBtn');
+        if(confirmBtn)confirmBtn.classList.toggle('show',sel.length>0);
+        return;
+    }
+    // Single selection
+    document.querySelectorAll('.option-btn').forEach(function(b){b.classList.remove('selected');});
+    btn.classList.add('selected');
+    examState.answers[String(qId)]=value;
+    // After selecting, show next button
+    setTimeout(function(){if(currentQuestionIdx<questionOrder.length-1)navQuestion(1);},400);
+}
+
+function examConfirmMulti(qId){
+    if(!examState||!examState.active)return;
+    var sel=document.querySelectorAll('.option-btn.selected');
+    var keys=[];sel.forEach(function(b){keys.push(b.dataset.key);});
+    if(keys.length===0)return;
+    examState.answers[String(qId)]=keys.sort().join('');
+    document.getElementById('examConfirmBtn').classList.remove('show');
+    setTimeout(function(){if(currentQuestionIdx<questionOrder.length-1)navQuestion(1);},400);
+}
+
+function endExam(){
+    if(!examState||!examState.active)return;
+    examState.active=false;
+    if(examState.timer){clearInterval(examState.timer);examState.timer=null;}
+    
+    const bank=getActiveBank();
+    var total=questionOrder.length;
+    var answered=0,correct=0;
+    var typeStats={};
+    
+    questionOrder.forEach(function(qId){
+        var q=bank.questions.find(function(x){return x.id===qId;});if(!q)return;
+        var ans=examState.answers[String(qId)]||'';
+        if(!typeStats[q.type])typeStats[q.type]={total:0,correct:0};
+        typeStats[q.type].total++;
+        if(!ans)return;
+        answered++;
+        var isCorrect=false;
+        if(q.type.includes('判断')){isCorrect=q.answer===ans;}
+        else if(q.type.includes('多选')){
+            var correctSorted=q.answer.split('').map(function(s){return s.trim();}).sort().join('');
+            var userSorted=ans.split('').sort().join('');
+            isCorrect=correctSorted===userSorted;
+        }else{isCorrect=q.answer.includes(ans);}
+        if(isCorrect){correct++;typeStats[q.type].correct++;}
+        else{
+            // Add to wrong question bank
+            var key=String(qId);
+            if(!bank.progress[key])bank.progress[key]={answered:false,correct:false,wrong:false,bookmarked:false};
+            bank.progress[key].wrong=true;
+        }
+    });
+    saveState();
+    
+    var scorePct=total>0?Math.round(correct/total*100):0;
+    var elapsed=Math.floor((Date.now()-examState.startTime)/1000);
+    var min=Math.floor(elapsed/60);var sec=elapsed%60;
+    var timeStr=min.toString().padStart(2,'0')+':'+sec.toString().padStart(2,'0');
+    
+    var reportHtml='<div class=\"exam-report\"><h2>📝 考试报告</h2>'+
+        '<div class=\"score-circle\" style=\"border-color:'+(scorePct>=60?'var(--success)':'var(--error)')+';color:'+(scorePct>=60?'var(--success)':'var(--error)')+';\">'+scorePct+'%</div>'+
+        '<p style=\"font-size:18px;font-weight:600;\">'+correct+'/'+total+' 正确</p>'+
+        '<p style=\"font-size:13px;color:var(--text-secondary);\">用时 '+timeStr+' | 已答 '+answered+'/'+total+' 题</p>'+
+        '<div class=\"score-details\">';
+    Object.keys(typeStats).forEach(function(t){
+        var s=typeStats[t];
+        var tp=s.total>0?Math.round(s.correct/s.total*100):0;
+        reportHtml+='<div class=\"score-detail-row\"><span>'+t+'</span><span>'+s.correct+'/'+s.total+' ('+tp+'%)</span></div>';
+    });
+    reportHtml+='</div></div>';
+    
+    document.getElementById('questionArea').innerHTML=reportHtml+'<div class=\"nav-buttons no-print\"><button class=\"nav-btn\" onclick=\"switchMode(\'wrong\')\">❌ 查看错题</button><button class=\"nav-btn primary\" onclick=\"switchMode(\'sequential\')\">继续练习</button></div>';
+    document.getElementById('bookmarkBtn').style.display='none';
+    switchMode('sequential'); // Reset mode tab visually
+    document.querySelectorAll('#modeTabs .mode-tab').forEach(function(t){t.classList.toggle('active',t.dataset.mode==='sequential');});
+    showToast('考试完成！正确率 '+scorePct+'%');
+}
+
+function showStats(){
+    const bank=getActiveBank();if(!bank)return;
+    var grid=document.getElementById('statsGrid');
+    var totalT=bank.questions.length;
+    var totalA=0,totalC=0;
+    var types={};
+    bank.questions.forEach(function(q){
+        if(!types[q.type])types[q.type]={total:0,answered:0,correct:0};
+        types[q.type].total++;
+        var p=bank.progress[String(q.id)];
+        if(p&&p.answered){totalA++;types[q.type].answered++;if(p.correct){totalC++;types[q.type].correct++;}}
+    });
+    var allPct=totalA>0?Math.round(totalC/totalA*100):0;
+    var html='<div class=\"stat-card\"><div class=\"stat-value\">'+totalC+'/'+totalA+'</div><div class=\"stat-label\">总体正确</div><div class=\"stat-sub\">正确率 '+allPct+'%</div></div>'+
+        '<div class=\"stat-card\"><div class=\"stat-value\">'+totalA+'/'+totalT+'</div><div class=\"stat-label\">完成进度</div><div class=\"stat-sub\">'+Math.round(totalA/totalT*100)+'%</div></div>';
+    Object.keys(types).forEach(function(t){
+        var s=types[t];
+        var pct=s.answered>0?Math.round(s.correct/s.answered*100):0;
+        html+='<div class=\"stat-card\"><div class=\"stat-value\">'+s.correct+'/'+s.answered+'</div><div class=\"stat-label\">'+t+'</div><div class=\"stat-sub\">'+pct+'%</div></div>';
+    });
+    grid.innerHTML=html;
+    openModal('modalStats');
+}
+
+function editGoal(){
+    var current=parseInt(localStorage.getItem('kuku_goal')||'0');
+    var input=prompt('每天目标做多少题？',current||'20');
+    if(input!==null){
+        var n=parseInt(input)||0;
+        if(n>0){localStorage.setItem('kuku_goal',n.toString());showToast('目标设为每天 '+n+' 题');}
+        else{localStorage.removeItem('kuku_goal');showToast('已取消每日目标');}
+        updateGoal();
+    }
+}
+
+function updateGoal(){
+    const bank=getActiveBank();if(!bank)return;
+    var goal=parseInt(localStorage.getItem('kuku_goal')||'0');
+    var today=new Date().toDateString();
+    var lastDate=localStorage.getItem('kuku_goal_date')||'';
+    var count=lastDate===today?parseInt(localStorage.getItem('kuku_goal_count')||'0'):0;
+    
+    // Count today's answers
+    if(lastDate!==today){
+        count=Object.values(bank.progress).filter(function(p){return p.answered;}).length;
+        localStorage.setItem('kuku_goal_date',today);
+        localStorage.setItem('kuku_goal_count',count.toString());
+    }
+    
+    document.getElementById('goalProgress').textContent=count;
+    document.getElementById('goalTarget').textContent=goal||'--';
+    document.getElementById('goalFill').style.width=(goal>0?Math.min(100,Math.round(count/goal*100)):0)+'%';
+}
+
+function selectBank(bankId) {
      state.activeBankId = bankId; saveState(); goPractice();
  }
  
@@ -615,7 +892,19 @@
      setTimeout(() => { if (currentQuestionIdx < questionOrder.length-1) navQuestion(1); }, 1500);
  }
  
- function navQuestion(dir) {
+ 
+function navQuestion(dir){
+    if(examState&&examState.active){
+        var ni=currentQuestionIdx+dir;
+        if(ni<0||ni>=questionOrder.length)return;
+        currentQuestionIdx=ni;renderExamQuestion();
+        return;
+    }
+
+    var ni=currentQuestionIdx+dir;
+    if(ni<0||ni>=questionOrder.length)return;
+    currentQuestionIdx=ni;renderCurrentQuestion();
+} {
      const ni = currentQuestionIdx + dir;
      if (ni < 0 || ni >= questionOrder.length) return;
      currentQuestionIdx = ni; renderCurrentQuestion();
@@ -791,7 +1080,8 @@
      document.getElementById('settingsTitle').textContent = bank.name+' - 设置';
      document.getElementById('settingsList').innerHTML =
          '<div class="setting-item"><span class="label">重命名</span><input type="text" id="renameInput" value="'+bank.name.replace(/'/g,"\\'")+'" style="padding:6px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px;width:150px;"></div>'+
-         '<div class="setting-item"><span class="label">导出题库</span><button class="action-btn primary" onclick="exportBank(\''+bankId+'\')">导出 JSON</button></div>'+
+         '<div class="setting-item"><span class="label">导出错题</span><button class="action-btn primary" onclick="exportWrongAnswers(''+bankId+')">导出</button></div>
+        <div class="setting-item"><span class="label">导出题库</span><button class="action-btn primary" onclick="exportBank(\''+bankId+'\')">导出 JSON</button></div>'+
          '<div class="setting-item"><span class="label">重置进度</span><button class="action-btn primary" onclick="resetProgress(\''+bankId+'\')">重置</button></div>'+
          '<div class="danger-zone"><p>删除后将无法恢复</p><button onclick="deleteBank(\''+bankId+'\')">🗑 删除此题库</button></div>';
      openModal('modalBankSettings');
@@ -804,7 +1094,27 @@
      }, 100);
  }
  
- function exportBank(bankId) {
+ 
+function exportWrongAnswers(bankId){
+    const bank=state.banks[bankId];if(!bank)return;
+    var wrongIds=Object.entries(bank.progress).filter(function(e){return e[1].wrong;}).map(function(e){return parseInt(e[0]);}).sort(function(a,b){return a-b;});
+    if(wrongIds.length===0){showToast('没有错题可以导出');return;}
+    var text='=== '+bank.name+' - 错题集 ===\n导出日期: '+(new Date().toISOString().split('T')[0])+'\n共 '+wrongIds.length+' 题\n\n'+'='.repeat(40)+'\n\n';
+    wrongIds.forEach(function(id){
+        var q=bank.questions.find(function(x){return x.id===id;});if(!q)return;
+        var p=bank.progress[String(id)];
+        text+='第'+id+'题 ['+q.type+']\n题目：'+q.question+'\n';
+        if(p&&p.selectedAnswer)text+='你的答案：'+p.selectedAnswer+'\n';
+        text+='正确答案：'+q.answer+'\n\n---\n\n';
+    });
+    var blob=new Blob([text],{type:'text/plain;charset=utf-8'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');a.href=url;a.download=bank.name+'_错题.txt';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+    showToast('已导出 '+wrongIds.length+' 道错题 📄');
+}
+
+function exportBank(bankId) {
      const bank = state.banks[bankId]; if (!bank) return;
      const data = { name: bank.name, exportDate: new Date().toISOString().split('T')[0], totalQuestions: bank.questions.length, questions: bank.questions };
      const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
